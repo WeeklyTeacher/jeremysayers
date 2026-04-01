@@ -505,6 +505,10 @@ h3 {
   min-height: 7rem;
 }
 
+.newsletter-form__turnstile {
+  min-height: 4.25rem;
+}
+
 .newsletter-form button {
   min-height: 3.2rem;
   background: linear-gradient(135deg, var(--navy), var(--navy-deep));
@@ -521,6 +525,10 @@ h3 {
 .newsletter-form__status {
   min-height: 1.2rem;
   font-size: 0.95rem;
+}
+
+.newsletter-form__status--error {
+  color: var(--red);
 }
 
 .signup-card--compact .newsletter-form__row {

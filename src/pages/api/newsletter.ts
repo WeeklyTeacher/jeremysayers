@@ -1,267 +1,254 @@
 // /home/r_/projects/jeremysayers/src/pages/api/newsletter.ts
 import type { APIRoute } from 'astro';
+import { env } from 'cloudflare:workers';
 
 export const prerender = false;
 
-type NewsletterState =
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const DEBUG = true;
+
+const normalizeOptional = (value: FormDataEntryValue | null, maxLength: number) => {
+  if (typeof value !== 'string') return null;
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+  return trimmed.slice(0, maxLength);
+};
+
+const normalizeRequired = (value: FormDataEntryValue | null, maxLength: number) => {
+  if (typeof value !== 'string') return null;
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+  return trimmed.slice(0, maxLength);
+};
+
+const resolveRedirectPath = (candidate: string | null, fallback = '/') => {
+  if (!candidate || typeof candidate !== 'string') return fallback;
+  if (!candidate.startsWith('/')) return fallback;
+  return candidate.length > 200 ? fallback : candidate;
+};
+
+type SignupStatus =
   | 'success'
+  | 'duplicate'
   | 'missing-email'
   | 'invalid-email'
   | 'missing-first-name'
-  | 'duplicate'
-  | 'bad-method'
-  | 'bad-request'
-  | 'db-error'
-  | 'unknown-error'
   | 'missing-turnstile-site-key'
   | 'missing-turnstile-secret'
   | 'turnstile-missing-token'
-  | 'turnstile-failed';
+  | 'turnstile-failed'
+  | 'bad-method'
+  | 'bad-request'
+  | 'db-error'
+  | 'unknown-error';
 
-type TurnstileVerifyResponse = {
-  success: boolean;
-  'error-codes'?: string[];
+const appendStatus = (path: string, status: SignupStatus) => {
+  const url = new URL(path, 'http://localhost');
+  url.searchParams.set('newsletter', status);
+  return `${url.pathname}${url.search}`;
 };
 
-const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const TURNSTILE_VERIFY_URL =
-  'https://challenges.cloudflare.com/turnstile/v0/siteverify';
-const turnstileSiteKey = import.meta.env.PUBLIC_TURNSTILE_SITE_KEY?.trim() ?? '';
+const logStep = (step: string, data?: Record<string, unknown>) => {
+  if (!DEBUG) return;
+  console.log(`[newsletter] ${step}`, data ?? {});
+};
 
-const json = (
-  state: NewsletterState,
-  message: string,
-  status: number,
-  extra: Record<string, unknown> = {}
-) =>
-  new Response(
-    JSON.stringify({
-      ok: state === 'success' || state === 'duplicate',
-      state,
-      message,
-      ...extra,
-    }),
-    {
-      status,
-      headers: {
-        'content-type': 'application/json; charset=utf-8',
-      },
-    }
-  );
+export const POST: APIRoute = async ({ request, redirect }) => {
+  let sourcePage = '/';
 
-export const POST: APIRoute = async ({ request, locals }) => {
-  const contentType = request.headers.get('content-type') ?? '';
-  const env = (locals as App.Locals).runtime?.env;
-  const db = env?.DB_JEREMYSAYERS;
-  const turnstileSecret = env?.TURNSTILE_SECRET_KEY?.trim() ?? '';
-
-  let email = '';
-  let firstName = '';
-  let lastName = '';
-  let interests = '';
-  let turnstileToken = '';
+  const redirectWithStatus = (status: SignupStatus) => {
+    const target = appendStatus(sourcePage, status);
+    console.log('[newsletter] redirecting', { status, target });
+    return redirect(target, 303);
+  };
 
   try {
-    if (contentType.includes('application/json')) {
-      const payload = await request.json();
-      email = String(payload.email ?? '').trim();
-      firstName = String(payload.firstName ?? '').trim();
-      lastName = String(payload.lastName ?? '').trim();
-      interests = String(payload.interests ?? '').trim();
-      turnstileToken = String(
-        payload.turnstileToken ?? payload['cf-turnstile-response'] ?? ''
-      ).trim();
-    } else if (
-      contentType.includes('multipart/form-data') ||
-      contentType.includes('application/x-www-form-urlencoded') ||
-      contentType === ''
-    ) {
-      const formData = await request.formData();
-      email = String(formData.get('email') ?? '').trim();
-      firstName = String(formData.get('firstName') ?? '').trim();
-      lastName = String(formData.get('lastName') ?? '').trim();
-      interests = String(formData.get('interests') ?? '').trim();
-      turnstileToken = String(
-        formData.get('cf-turnstile-response') ?? formData.get('turnstileToken') ?? ''
-      ).trim();
+    logStep('request_received', {
+      method: request.method,
+      contentType: request.headers.get('content-type'),
+      cfConnectingIp: request.headers.get('CF-Connecting-IP'),
+      host: request.headers.get('host'),
+      origin: request.headers.get('origin'),
+      referer: request.headers.get('referer'),
+    });
+
+    const formData = await request.formData();
+
+    const firstName = normalizeRequired(formData.get('firstName'), 120);
+    const lastName = normalizeOptional(formData.get('lastName'), 120);
+    const emailRaw = normalizeRequired(formData.get('email'), 254);
+    const interests = normalizeOptional(formData.get('interests'), 2000);
+    const sourceContext = normalizeOptional(formData.get('sourceContext'), 120);
+    const sourcePageFromForm = resolveRedirectPath(normalizeOptional(formData.get('sourcePage'), 200), '/');
+    const turnstileToken = normalizeOptional(formData.get('cf-turnstile-response'), 4096);
+    const hasTurnstileField = formData.has('cf-turnstile-response');
+
+    sourcePage = sourcePageFromForm;
+
+    logStep('parsed_form', {
+      hasFirstName: Boolean(firstName),
+      hasLastName: Boolean(lastName),
+      hasEmail: Boolean(emailRaw),
+      hasInterests: Boolean(interests),
+      sourceContext,
+      sourcePage,
+      hasTurnstileField,
+      hasTurnstileToken: Boolean(turnstileToken),
+      turnstileTokenLength: turnstileToken?.length ?? 0,
+    });
+
+    if (!firstName) {
+      logStep('missing_first_name');
+      return redirectWithStatus('missing-first-name');
+    }
+
+    if (!emailRaw) {
+      logStep('missing_email');
+      return redirectWithStatus('missing-email');
+    }
+
+    const email = emailRaw.toLowerCase();
+
+    if (!EMAIL_REGEX.test(email)) {
+      logStep('invalid_email_format', { email });
+      return redirectWithStatus('invalid-email');
+    }
+
+    const turnstileSiteKey = env.PUBLIC_TURNSTILE_SITE_KEY;
+    const turnstileSecret = env.TURNSTILE_SECRET_KEY;
+
+    logStep('env_check', {
+      hasTurnstileSiteKey: Boolean(turnstileSiteKey),
+      hasTurnstileSecret: Boolean(turnstileSecret),
+      hasDbBinding: Boolean(env.DB_JEREMYSAYERS),
+    });
+
+    if (!turnstileSiteKey) {
+      logStep('missing_turnstile_site_key');
+      return redirectWithStatus('missing-turnstile-site-key');
+    }
+
+    if (hasTurnstileField) {
+      if (!turnstileToken) {
+        logStep('missing_turnstile_token');
+        return redirectWithStatus('turnstile-missing-token');
+      }
+
+      if (!turnstileSecret) {
+        logStep('missing_turnstile_secret');
+        return redirectWithStatus('missing-turnstile-secret');
+      }
+
+      try {
+        const verificationBody = new URLSearchParams({
+          secret: turnstileSecret,
+          response: turnstileToken,
+        });
+
+        const connectingIp = request.headers.get('CF-Connecting-IP');
+        if (connectingIp) {
+          verificationBody.set('remoteip', connectingIp);
+        }
+
+        const verificationResponse = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: verificationBody.toString(),
+        });
+
+        const verificationResult = await verificationResponse.json() as {
+          success?: boolean;
+          'error-codes'?: string[];
+          hostname?: string;
+          action?: string;
+          challenge_ts?: string;
+        };
+
+        logStep('turnstile_verify_result', {
+          httpOk: verificationResponse.ok,
+          httpStatus: verificationResponse.status,
+          success: verificationResult.success,
+          errorCodes: verificationResult['error-codes'],
+          hostname: verificationResult.hostname,
+          action: verificationResult.action,
+          challengeTs: verificationResult.challenge_ts,
+        });
+
+        if (!verificationResponse.ok || !verificationResult.success) {
+          return redirectWithStatus('turnstile-failed');
+        }
+      } catch (error) {
+        console.error('[newsletter] turnstile verification failed', error);
+        return redirectWithStatus('turnstile-failed');
+      }
     } else {
-      console.error('Newsletter bad request: unsupported content type', {
-        contentType,
-      });
-      return json('bad-request', 'The signup request format was not recognized.', 400);
+      logStep('missing_turnstile_field');
+      return redirectWithStatus('turnstile-missing-token');
     }
+
+    const newsletterDb = env.DB_JEREMYSAYERS;
+
+    if (!newsletterDb) {
+      logStep('missing_db_binding');
+      return redirectWithStatus('db-error');
+    }
+
+    let existingSubscriber: { id: number } | null = null;
+
+    try {
+      existingSubscriber = await newsletterDb
+        .prepare('SELECT id FROM newsletter_subscribers WHERE email = ?1 LIMIT 1')
+        .bind(email)
+        .first<{ id: number }>();
+    } catch (error) {
+      console.error('[newsletter] duplicate check failed', error);
+      return redirectWithStatus('db-error');
+    }
+
+    if (existingSubscriber) {
+      return redirectWithStatus('duplicate');
+    }
+
+    try {
+      await newsletterDb
+        .prepare(
+          `INSERT INTO newsletter_subscribers (
+            first_name,
+            last_name,
+            email,
+            interests,
+            created_at
+          )
+          VALUES (?1, ?2, ?3, ?4, CURRENT_TIMESTAMP)`
+        )
+        .bind(
+          firstName,
+          lastName,
+          email,
+          interests,
+        )
+        .run();
+    } catch (error) {
+      console.error('[newsletter] insert failed', error);
+
+      const maybeMessage = error instanceof Error ? error.message : '';
+      if (maybeMessage.toLowerCase().includes('unique')) {
+        return redirectWithStatus('duplicate');
+      }
+
+      return redirectWithStatus('db-error');
+    }
+
+    return redirectWithStatus('success');
   } catch (error) {
-    console.error('Newsletter bad request: failed to parse request body', error);
-    return json('bad-request', 'The signup request could not be processed.', 400);
-  }
-
-  if (!turnstileSiteKey) {
-    console.error('Newsletter Turnstile site key is missing: PUBLIC_TURNSTILE_SITE_KEY');
-    return json(
-      'missing-turnstile-site-key',
-      'Spam protection is not configured yet.',
-      500
-    );
-  }
-
-  if (!turnstileSecret) {
-    console.error('Newsletter Turnstile secret is missing: TURNSTILE_SECRET_KEY');
-    return json(
-      'missing-turnstile-secret',
-      'Spam protection is not fully configured yet.',
-      500
-    );
-  }
-
-  if (!turnstileToken) {
-    return json(
-      'turnstile-missing-token',
-      'Please complete the spam protection check.',
-      400
-    );
-  }
-
-  try {
-    const remoteIpHeader =
-      request.headers.get('CF-Connecting-IP') ??
-      request.headers.get('X-Forwarded-For') ??
-      '';
-    const remoteIp = remoteIpHeader.split(',')[0]?.trim() ?? '';
-
-    const verifyBody = new URLSearchParams({
-      secret: turnstileSecret,
-      response: turnstileToken,
-    });
-
-    if (remoteIp) {
-      verifyBody.set('remoteip', remoteIp);
-    }
-
-    const verifyResponse = await fetch(TURNSTILE_VERIFY_URL, {
-      method: 'POST',
-      headers: {
-        'content-type': 'application/x-www-form-urlencoded',
-      },
-      body: verifyBody.toString(),
-    });
-
-    if (!verifyResponse.ok) {
-      console.error('Newsletter Turnstile verification HTTP failure', {
-        status: verifyResponse.status,
-      });
-      return json(
-        'turnstile-failed',
-        'Spam protection verification failed. Please try again.',
-        400
-      );
-    }
-
-    const verifyPayload =
-      (await verifyResponse.json()) as TurnstileVerifyResponse;
-
-    if (!verifyPayload.success) {
-      console.error('Newsletter Turnstile verification failed', {
-        errorCodes: verifyPayload['error-codes'] ?? [],
-      });
-      return json(
-        'turnstile-failed',
-        'Spam protection verification failed. Please try again.',
-        400
-      );
-    }
-  } catch (error) {
-    console.error('Newsletter Turnstile verification error', error);
-    return json(
-      'turnstile-failed',
-      'Spam protection verification failed. Please try again.',
-      400
-    );
-  }
-
-  if (!firstName) {
-    return json('missing-first-name', 'First name is required.', 400);
-  }
-
-  if (!email) {
-    return json('missing-email', 'Email is required.', 400);
-  }
-
-  if (!EMAIL_PATTERN.test(email)) {
-    return json('invalid-email', 'Enter a valid email address.', 400);
-  }
-
-  if (!db) {
-    console.error('Newsletter database binding is missing: DB_JEREMYSAYERS');
-    return json('db-error', 'Newsletter storage is not configured yet.', 500);
-  }
-
-  try {
-    const existingSubscriber = await db
-      .prepare(
-        `SELECT id
-         FROM newsletter_subscribers
-         WHERE email = ?1
-         LIMIT 1`
-      )
-      .bind(email)
-      .first<{ id: number | string | null }>();
-
-    if (existingSubscriber?.id) {
-      return json(
-        'duplicate',
-        'That email is already subscribed for updates.',
-        200,
-        { duplicate: true }
-      );
-    }
-
-    await db
-      .prepare(
-        `INSERT INTO newsletter_subscribers (first_name, last_name, email, interests)
-         VALUES (?1, ?2, ?3, ?4)`
-      )
-      .bind(firstName, lastName || null, email, interests || null)
-      .run();
-
-    return json(
-      'success',
-      'Thanks. You are on the list for future updates from Jeremy.',
-      201
-    );
-  } catch (error) {
-    const message = error instanceof Error ? error.message : 'Unknown error';
-    console.error('Newsletter database error', error);
-
-    if (message.toLowerCase().includes('unique')) {
-      return json(
-        'duplicate',
-        'That email is already subscribed for updates.',
-        200,
-        { duplicate: true }
-      );
-    }
-
-    if (
-      message.toLowerCase().includes('d1') ||
-      message.toLowerCase().includes('sqlite') ||
-      message.toLowerCase().includes('database')
-    ) {
-      return json(
-        'db-error',
-        'Something went wrong while saving your signup.',
-        500
-      );
-    }
-
-    return json(
-      'unknown-error',
-      'Something unexpected went wrong while processing your signup.',
-      500
-    );
+    console.error('[newsletter] unexpected handler failure', error);
+    return redirectWithStatus('unknown-error');
   }
 };
 
-export const ALL: APIRoute = async ({ request }) => {
-  console.error('Newsletter bad method', { method: request.method });
-  return json('bad-method', 'Method not allowed.', 405);
+export const ALL: APIRoute = async ({ request, redirect }) => {
+  const sourcePage = resolveRedirectPath(new URL(request.url).searchParams.get('sourcePage'), '/');
+  const target = appendStatus(sourcePage, 'bad-method');
+  console.error('[newsletter] bad method', { method: request.method, target });
+  return redirect(target, 303);
 };

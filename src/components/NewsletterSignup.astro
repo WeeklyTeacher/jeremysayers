@@ -16,32 +16,35 @@ const {
   eyebrow = 'Stay Connected'
 } = Astro.props;
 
-const turnstileSiteKey = import.meta.env.PUBLIC_TURNSTILE_SITE_KEY?.trim() ?? '';
+const turnstileSiteKey = import.meta.env.PUBLIC_TURNSTILE_SITE_KEY;
+const enableClientDebug = import.meta.env.DEV;
+const status = Astro.url.searchParams.get('newsletter');
+const formAction = new URL('/api/newsletter', Astro.url).pathname;
 
 const newsletterMessages = {
   success: 'Thanks. You are on the list for future updates from Jeremy.',
+  duplicate: 'That email is already subscribed for updates.',
   'missing-email': 'Please enter your email address.',
   'invalid-email': 'Please enter a valid email address.',
   'missing-first-name': 'Please enter your first name.',
-  duplicate: 'That email is already subscribed for updates.',
-  'bad-method': 'This signup request used the wrong method.',
-  'bad-request': 'The signup request could not be processed.',
-  'db-error': 'The newsletter service is temporarily unavailable. Please try again.',
-  'unknown-error': 'Something went wrong. Please try again.',
   'missing-turnstile-site-key': 'Spam protection is not configured yet.',
   'missing-turnstile-secret': 'The newsletter service is not fully configured yet.',
   'turnstile-missing-token': 'Please complete the spam protection check.',
-  'turnstile-failed': 'Spam protection verification failed. Please try again.'
+  'turnstile-failed': 'Spam protection verification failed. Please try again.',
+  'bad-method': 'This signup request used the wrong method.',
+  'bad-request': 'The signup request could not be processed.',
+  'db-error': 'The newsletter service is temporarily unavailable. Please try again.',
+  'unknown-error': 'Something went wrong. Please try again.'
 } as const;
 
 type NewsletterState = keyof typeof newsletterMessages;
 
-const initialNewsletterState = Astro.url.searchParams.get('newsletter');
-const initialNewsletterMessage =
-  initialNewsletterState &&
-  initialNewsletterState in newsletterMessages
-    ? newsletterMessages[initialNewsletterState as NewsletterState]
-    : '';
+const isKnownStatus = status && status in newsletterMessages;
+const isError =
+  status &&
+  status !== 'success' &&
+  status !== 'duplicate' &&
+  status in newsletterMessages;
 ---
 
 <section class={`signup-card ${compact ? 'signup-card--compact' : ''}`}>
@@ -52,10 +55,10 @@ const initialNewsletterMessage =
   </div>
   <form
     class={`newsletter-form ${compact ? 'newsletter-form--compact' : ''}`}
-    method="post"
-    action="/api/newsletter"
+    action={formAction}
+    method="POST"
     data-newsletter-form
-    data-turnstile-site-key={turnstileSiteKey}
+    data-debug-submit={enableClientDebug ? 'true' : 'false'}
   >
     <div class="newsletter-form__row">
       <label>
@@ -75,150 +78,83 @@ const initialNewsletterMessage =
       <span class="sr-only">Interests or Comments</span>
       <textarea name="interests" rows="4" placeholder="Interests or Comments"></textarea>
     </label>
-    <div
-      class="cf-turnstile"
-      data-newsletter-turnstile
-      data-sitekey={turnstileSiteKey}
-      data-theme="light"
-    ></div>
+
     <input type="hidden" name="sourceContext" value={sourceContext} />
+    <input type="hidden" name="sourcePage" value={Astro.url.pathname} />
+
+    {
+      turnstileSiteKey && (
+        <div class="newsletter-form__turnstile">
+          <input type="hidden" name="cf-turnstile-response" value="" data-turnstile-response />
+          <div
+            class="cf-turnstile"
+            data-sitekey={turnstileSiteKey}
+            data-theme="light"
+            data-appearance="interaction-only"
+            data-size="flexible"
+            data-callback="onNewsletterTurnstileSuccess"
+            data-expired-callback="onNewsletterTurnstileExpired"
+            data-error-callback="onNewsletterTurnstileExpired"
+          ></div>
+        </div>
+      )
+    }
+
     <button type="submit">Join the Community</button>
-    <p
-      class="newsletter-form__status"
-      data-newsletter-status
-      data-initial-newsletter-state={initialNewsletterState ?? ''}
-      aria-live="polite"
-    >
-      {initialNewsletterMessage}
-    </p>
+    {
+      isKnownStatus && (
+        <p class:list={['newsletter-form__status', isError && 'newsletter-form__status--error']} role={isError ? 'alert' : 'status'}>
+          {newsletterMessages[status as NewsletterState]}
+        </p>
+      )
+    }
   </form>
   <p class="fine-print">
     This updates form is intended for community-minded communication about schools, ideas, projects, and future work.
   </p>
 </section>
 
-<script>
-  const newsletterMessages = {
-    success: 'Thanks. You are on the list for future updates from Jeremy.',
-    'missing-email': 'Please enter your email address.',
-    'invalid-email': 'Please enter a valid email address.',
-    'missing-first-name': 'Please enter your first name.',
-    duplicate: 'That email is already subscribed for updates.',
-    'bad-method': 'This signup request used the wrong method.',
-    'bad-request': 'The signup request could not be processed.',
-    'db-error': 'The newsletter service is temporarily unavailable. Please try again.',
-    'unknown-error': 'Something went wrong. Please try again.',
-    'missing-turnstile-site-key': 'Spam protection is not configured yet.',
-    'missing-turnstile-secret': 'The newsletter service is not fully configured yet.',
-    'turnstile-missing-token': 'Please complete the spam protection check.',
-    'turnstile-failed': 'Spam protection verification failed. Please try again.'
-  };
-
-  const setNewsletterState = (state) => {
-    const url = new URL(window.location.href);
-    url.searchParams.set('newsletter', state);
-    window.history.replaceState({}, '', url);
-  };
-
-  const syncStatusFromUrl = () => {
-    const url = new URL(window.location.href);
-    const state = url.searchParams.get('newsletter');
-    const message = state && newsletterMessages[state] ? newsletterMessages[state] : '';
-
-    for (const status of document.querySelectorAll('[data-newsletter-status]')) {
-      if (status instanceof HTMLElement) {
-        status.textContent = message;
-      }
+{turnstileSiteKey && <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>}
+<script is:inline>
+  const syncNewsletterTurnstileToken = (form, token = '') => {
+    const tokenInput = form?.querySelector('[data-turnstile-response]');
+    if (tokenInput instanceof HTMLInputElement) {
+      tokenInput.value = token;
     }
   };
 
-  const resetTurnstileWidget = (form) => {
-    const widget = form.querySelector('[data-newsletter-turnstile]');
-    if (
-      widget instanceof HTMLElement &&
-      window.turnstile &&
-      typeof window.turnstile.reset === 'function'
-    ) {
-      window.turnstile.reset(widget);
-    }
+  window.onNewsletterTurnstileSuccess = (token) => {
+    document.querySelectorAll('[data-newsletter-form]').forEach((form) => {
+      syncNewsletterTurnstileToken(form, token);
+    });
   };
 
-  const ensureTurnstileScript = () => {
-    if (document.querySelector('script[data-turnstile-script]')) return;
-
-    const script = document.createElement('script');
-    script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js';
-    script.async = true;
-    script.defer = true;
-    script.dataset.turnstileScript = 'true';
-    document.head.appendChild(script);
+  window.onNewsletterTurnstileExpired = () => {
+    document.querySelectorAll('[data-newsletter-form]').forEach((form) => {
+      syncNewsletterTurnstileToken(form, '');
+    });
   };
 
-  syncStatusFromUrl();
+  document.querySelectorAll('[data-newsletter-form]').forEach((form) => {
+    form.addEventListener('submit', () => {
+      const injectedTurnstileInput = form.querySelector('input[name="cf-turnstile-response"]:not([data-turnstile-response])');
+      const hiddenTurnstileInput = form.querySelector('[data-turnstile-response]');
 
-  const forms = Array.from(document.querySelectorAll('[data-newsletter-form]'));
-  const hasTurnstileSiteKey = forms.some((form) => form.dataset.turnstileSiteKey);
-
-  if (hasTurnstileSiteKey) {
-    ensureTurnstileScript();
-  }
-
-  for (const form of forms) {
-    form.addEventListener('submit', async (event) => {
-      event.preventDefault();
-      const status = form.querySelector('[data-newsletter-status]');
-      const button = form.querySelector('button');
-      if (!(status instanceof HTMLElement) || !(button instanceof HTMLButtonElement)) return;
-
-      const turnstileSiteKey = form.dataset.turnstileSiteKey ?? '';
-      if (!turnstileSiteKey) {
-        setNewsletterState('missing-turnstile-site-key');
-        syncStatusFromUrl();
-        return;
+      if (
+        injectedTurnstileInput instanceof HTMLInputElement &&
+        hiddenTurnstileInput instanceof HTMLInputElement &&
+        !hiddenTurnstileInput.value
+      ) {
+        hiddenTurnstileInput.value = injectedTurnstileInput.value;
       }
 
-      const formData = new FormData(form);
-      const turnstileToken = String(formData.get('cf-turnstile-response') ?? '').trim();
-
-      if (!turnstileToken) {
-        setNewsletterState('turnstile-missing-token');
-        syncStatusFromUrl();
-        return;
-      }
-
-      status.textContent = 'Submitting...';
-      button.disabled = true;
-
-      try {
-        const response = await fetch(form.action, {
-          method: 'POST',
-          body: formData,
-          headers: { Accept: 'application/json' }
-        });
-
-        const payload = await response.json();
-        const state =
-          payload && typeof payload.state === 'string' && newsletterMessages[payload.state]
-            ? payload.state
-            : response.ok
-              ? 'success'
-              : 'unknown-error';
-
-        setNewsletterState(state);
-        syncStatusFromUrl();
-
-        if (state === 'success') {
-          form.reset();
-        }
-
-        resetTurnstileWidget(form);
-      } catch {
-        setNewsletterState('unknown-error');
-        syncStatusFromUrl();
-        resetTurnstileWidget(form);
-      } finally {
-        button.disabled = false;
+      if (form.dataset.debugSubmit === 'true') {
+        const formData = new FormData(form);
+        console.log(
+          '[newsletter-form] submit payload',
+          Object.fromEntries(formData.entries())
+        );
       }
     });
-  }
+  });
 </script>
