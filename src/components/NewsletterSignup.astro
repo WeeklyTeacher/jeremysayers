@@ -16,6 +16,8 @@ const {
   eyebrow = 'Stay Connected'
 } = Astro.props;
 
+const turnstileSiteKey = import.meta.env.PUBLIC_TURNSTILE_SITE_KEY?.trim() ?? '';
+
 const newsletterMessages = {
   success: 'Thanks. You are on the list for future updates from Jeremy.',
   'missing-email': 'Please enter your email address.',
@@ -25,7 +27,11 @@ const newsletterMessages = {
   'bad-method': 'This signup request used the wrong method.',
   'bad-request': 'The signup request could not be processed.',
   'db-error': 'The newsletter service is temporarily unavailable. Please try again.',
-  'unknown-error': 'Something went wrong. Please try again.'
+  'unknown-error': 'Something went wrong. Please try again.',
+  'missing-turnstile-site-key': 'Spam protection is not configured yet.',
+  'missing-turnstile-secret': 'The newsletter service is not fully configured yet.',
+  'turnstile-missing-token': 'Please complete the spam protection check.',
+  'turnstile-failed': 'Spam protection verification failed. Please try again.'
 } as const;
 
 type NewsletterState = keyof typeof newsletterMessages;
@@ -44,7 +50,13 @@ const initialNewsletterMessage =
     <h3>{title}</h3>
     <p>{text}</p>
   </div>
-  <form class={`newsletter-form ${compact ? 'newsletter-form--compact' : ''}`} method="post" action="/api/newsletter" data-newsletter-form>
+  <form
+    class={`newsletter-form ${compact ? 'newsletter-form--compact' : ''}`}
+    method="post"
+    action="/api/newsletter"
+    data-newsletter-form
+    data-turnstile-site-key={turnstileSiteKey}
+  >
     <div class="newsletter-form__row">
       <label>
         <span class="sr-only">First Name</span>
@@ -63,6 +75,12 @@ const initialNewsletterMessage =
       <span class="sr-only">Interests or Comments</span>
       <textarea name="interests" rows="4" placeholder="Interests or Comments"></textarea>
     </label>
+    <div
+      class="cf-turnstile"
+      data-newsletter-turnstile
+      data-sitekey={turnstileSiteKey}
+      data-theme="light"
+    ></div>
     <input type="hidden" name="sourceContext" value={sourceContext} />
     <button type="submit">Join the Community</button>
     <p
@@ -89,7 +107,11 @@ const initialNewsletterMessage =
     'bad-method': 'This signup request used the wrong method.',
     'bad-request': 'The signup request could not be processed.',
     'db-error': 'The newsletter service is temporarily unavailable. Please try again.',
-    'unknown-error': 'Something went wrong. Please try again.'
+    'unknown-error': 'Something went wrong. Please try again.',
+    'missing-turnstile-site-key': 'Spam protection is not configured yet.',
+    'missing-turnstile-secret': 'The newsletter service is not fully configured yet.',
+    'turnstile-missing-token': 'Please complete the spam protection check.',
+    'turnstile-failed': 'Spam protection verification failed. Please try again.'
   };
 
   const setNewsletterState = (state) => {
@@ -110,9 +132,36 @@ const initialNewsletterMessage =
     }
   };
 
+  const resetTurnstileWidget = (form) => {
+    const widget = form.querySelector('[data-newsletter-turnstile]');
+    if (
+      widget instanceof HTMLElement &&
+      window.turnstile &&
+      typeof window.turnstile.reset === 'function'
+    ) {
+      window.turnstile.reset(widget);
+    }
+  };
+
+  const ensureTurnstileScript = () => {
+    if (document.querySelector('script[data-turnstile-script]')) return;
+
+    const script = document.createElement('script');
+    script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js';
+    script.async = true;
+    script.defer = true;
+    script.dataset.turnstileScript = 'true';
+    document.head.appendChild(script);
+  };
+
   syncStatusFromUrl();
 
   const forms = Array.from(document.querySelectorAll('[data-newsletter-form]'));
+  const hasTurnstileSiteKey = forms.some((form) => form.dataset.turnstileSiteKey);
+
+  if (hasTurnstileSiteKey) {
+    ensureTurnstileScript();
+  }
 
   for (const form of forms) {
     form.addEventListener('submit', async (event) => {
@@ -121,13 +170,29 @@ const initialNewsletterMessage =
       const button = form.querySelector('button');
       if (!(status instanceof HTMLElement) || !(button instanceof HTMLButtonElement)) return;
 
+      const turnstileSiteKey = form.dataset.turnstileSiteKey ?? '';
+      if (!turnstileSiteKey) {
+        setNewsletterState('missing-turnstile-site-key');
+        syncStatusFromUrl();
+        return;
+      }
+
+      const formData = new FormData(form);
+      const turnstileToken = String(formData.get('cf-turnstile-response') ?? '').trim();
+
+      if (!turnstileToken) {
+        setNewsletterState('turnstile-missing-token');
+        syncStatusFromUrl();
+        return;
+      }
+
       status.textContent = 'Submitting...';
       button.disabled = true;
 
       try {
         const response = await fetch(form.action, {
           method: 'POST',
-          body: new FormData(form),
+          body: formData,
           headers: { Accept: 'application/json' }
         });
 
@@ -145,9 +210,12 @@ const initialNewsletterMessage =
         if (state === 'success') {
           form.reset();
         }
+
+        resetTurnstileWidget(form);
       } catch {
         setNewsletterState('unknown-error');
         syncStatusFromUrl();
+        resetTurnstileWidget(form);
       } finally {
         button.disabled = false;
       }

@@ -8,6 +8,7 @@ declare namespace App {
     runtime?: {
       env?: {
         DB_JEREMYSAYERS?: D1Database;
+        TURNSTILE_SECRET_KEY?: string;
       };
     };
   }

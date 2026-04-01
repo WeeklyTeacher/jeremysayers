@@ -12,9 +12,21 @@ type NewsletterState =
   | 'bad-method'
   | 'bad-request'
   | 'db-error'
-  | 'unknown-error';
+  | 'unknown-error'
+  | 'missing-turnstile-site-key'
+  | 'missing-turnstile-secret'
+  | 'turnstile-missing-token'
+  | 'turnstile-failed';
+
+type TurnstileVerifyResponse = {
+  success: boolean;
+  'error-codes'?: string[];
+};
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const TURNSTILE_VERIFY_URL =
+  'https://challenges.cloudflare.com/turnstile/v0/siteverify';
+const turnstileSiteKey = import.meta.env.PUBLIC_TURNSTILE_SITE_KEY?.trim() ?? '';
 
 const json = (
   state: NewsletterState,
@@ -41,11 +53,13 @@ export const POST: APIRoute = async ({ request, locals }) => {
   const contentType = request.headers.get('content-type') ?? '';
   const env = (locals as App.Locals).runtime?.env;
   const db = env?.DB_JEREMYSAYERS;
+  const turnstileSecret = env?.TURNSTILE_SECRET_KEY?.trim() ?? '';
 
   let email = '';
   let firstName = '';
   let lastName = '';
   let interests = '';
+  let turnstileToken = '';
 
   try {
     if (contentType.includes('application/json')) {
@@ -54,6 +68,9 @@ export const POST: APIRoute = async ({ request, locals }) => {
       firstName = String(payload.firstName ?? '').trim();
       lastName = String(payload.lastName ?? '').trim();
       interests = String(payload.interests ?? '').trim();
+      turnstileToken = String(
+        payload.turnstileToken ?? payload['cf-turnstile-response'] ?? ''
+      ).trim();
     } else if (
       contentType.includes('multipart/form-data') ||
       contentType.includes('application/x-www-form-urlencoded') ||
@@ -64,6 +81,9 @@ export const POST: APIRoute = async ({ request, locals }) => {
       firstName = String(formData.get('firstName') ?? '').trim();
       lastName = String(formData.get('lastName') ?? '').trim();
       interests = String(formData.get('interests') ?? '').trim();
+      turnstileToken = String(
+        formData.get('cf-turnstile-response') ?? formData.get('turnstileToken') ?? ''
+      ).trim();
     } else {
       console.error('Newsletter bad request: unsupported content type', {
         contentType,
@@ -73,6 +93,89 @@ export const POST: APIRoute = async ({ request, locals }) => {
   } catch (error) {
     console.error('Newsletter bad request: failed to parse request body', error);
     return json('bad-request', 'The signup request could not be processed.', 400);
+  }
+
+  if (!turnstileSiteKey) {
+    console.error('Newsletter Turnstile site key is missing: PUBLIC_TURNSTILE_SITE_KEY');
+    return json(
+      'missing-turnstile-site-key',
+      'Spam protection is not configured yet.',
+      500
+    );
+  }
+
+  if (!turnstileSecret) {
+    console.error('Newsletter Turnstile secret is missing: TURNSTILE_SECRET_KEY');
+    return json(
+      'missing-turnstile-secret',
+      'Spam protection is not fully configured yet.',
+      500
+    );
+  }
+
+  if (!turnstileToken) {
+    return json(
+      'turnstile-missing-token',
+      'Please complete the spam protection check.',
+      400
+    );
+  }
+
+  try {
+    const remoteIpHeader =
+      request.headers.get('CF-Connecting-IP') ??
+      request.headers.get('X-Forwarded-For') ??
+      '';
+    const remoteIp = remoteIpHeader.split(',')[0]?.trim() ?? '';
+
+    const verifyBody = new URLSearchParams({
+      secret: turnstileSecret,
+      response: turnstileToken,
+    });
+
+    if (remoteIp) {
+      verifyBody.set('remoteip', remoteIp);
+    }
+
+    const verifyResponse = await fetch(TURNSTILE_VERIFY_URL, {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/x-www-form-urlencoded',
+      },
+      body: verifyBody.toString(),
+    });
+
+    if (!verifyResponse.ok) {
+      console.error('Newsletter Turnstile verification HTTP failure', {
+        status: verifyResponse.status,
+      });
+      return json(
+        'turnstile-failed',
+        'Spam protection verification failed. Please try again.',
+        400
+      );
+    }
+
+    const verifyPayload =
+      (await verifyResponse.json()) as TurnstileVerifyResponse;
+
+    if (!verifyPayload.success) {
+      console.error('Newsletter Turnstile verification failed', {
+        errorCodes: verifyPayload['error-codes'] ?? [],
+      });
+      return json(
+        'turnstile-failed',
+        'Spam protection verification failed. Please try again.',
+        400
+      );
+    }
+  } catch (error) {
+    console.error('Newsletter Turnstile verification error', error);
+    return json(
+      'turnstile-failed',
+      'Spam protection verification failed. Please try again.',
+      400
+    );
   }
 
   if (!firstName) {
