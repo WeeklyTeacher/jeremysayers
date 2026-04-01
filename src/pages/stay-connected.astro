@@ -1,0 +1,39 @@
+---
+// /home/r_/projects/jeremysayers/src/pages/stay-connected.astro
+import NewsletterSignup from '../components/NewsletterSignup.astro';
+import PageIntro from '../components/PageIntro.astro';
+import SectionHeading from '../components/SectionHeading.astro';
+import SiteLayout from '../layouts/SiteLayout.astro';
+---
+
+<SiteLayout
+  title="Stay Connected | Jeremy Sayers"
+  description="Subscribe for updates from Jeremy Sayers on education, community ideas, leadership, projects, and future work."
+>
+  <PageIntro
+    title="Stay Connected"
+    description="Get occasional updates from Jeremy on education, community ideas, leadership, useful projects, and future work. This is an updates list, not a campaign list."
+  />
+
+  <section>
+    <div class="shell stay-grid">
+      <div class="stack">
+        <SectionHeading
+          eyebrow="Why Subscribe"
+          title="A calm, credible updates channel built for long-term trust."
+        />
+        <article class="list-card">
+          <h3>You can expect updates on:</h3>
+          <ul>
+            <li>Education insights and classroom-informed ideas</li>
+            <li>Community-minded reflections and local observations</li>
+            <li>Projects such as EdThings.com and TechSparked.org</li>
+            <li>Hands-on learning, STEM, and school innovation</li>
+          </ul>
+        </article>
+      </div>
+
+      <NewsletterSignup sourceContext="stay-connected-page" />
+    </div>
+  </section>
+</SiteLayout>

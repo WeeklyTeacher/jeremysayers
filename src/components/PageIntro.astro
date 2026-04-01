@@ -1,0 +1,18 @@
+---
+// /home/r_/projects/jeremysayers/src/components/PageIntro.astro
+interface Props {
+  title: string;
+  description: string;
+  eyebrow?: string;
+}
+
+const { title, description, eyebrow = 'Jeremy Sayers' } = Astro.props;
+---
+
+<section class="page-intro">
+  <div class="shell page-intro__inner">
+    <p class="eyebrow">{eyebrow}</p>
+    <h1>{title}</h1>
+    <p class="page-intro__text">{description}</p>
+  </div>
+</section>

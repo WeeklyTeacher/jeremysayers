@@ -1,0 +1,224 @@
+---
+// /home/r_/projects/jeremysayers/src/pages/index.astro
+import NewsletterSignup from "../components/NewsletterSignup.astro";
+import SectionHeading from "../components/SectionHeading.astro";
+import SiteLayout from "../layouts/SiteLayout.astro";
+import {
+  advocacyAreas,
+  communitySignals,
+  heroHighlights,
+  heroMetrics,
+  homepageAudit,
+  missionCards,
+  projects,
+  site,
+  stemFeatures,
+} from "../data/site";
+---
+
+<SiteLayout title={site.title} description={site.description}>
+  <section class="hero-banner">
+    <div
+      class="hero-banner__image"
+      role="img"
+      aria-label="Abstract education and STEM themed hero image"
+    >
+    </div>
+    <div class="hero-banner__overlay"></div>
+    <div class="shell hero-banner__content">
+      <div class="hero-banner__copy">
+        <p class="eyebrow reveal reveal--1">Torrance, California</p>
+        <h1 class="reveal reveal--2">
+          Grounded in service, guided by community, and dedicated to supporting
+          students, families, and schools.
+        </h1>
+        <p class="hero-banner__lede reveal reveal--3">
+          Jeremy Sayers is an educator, STEM advocate, and community-minded
+          leader focused on hands-on learning, practical school innovation, and
+          stronger partnerships between families, schools, and the wider
+          community.
+        </p>
+        <div class="hero-banner__actions reveal reveal--4">
+          <a class="button button--primary" href="/about/">Meet Jeremy</a>
+          <a class="button button--light" href="/education/"
+            >Explore Education Work</a
+          >
+          <a class="button button--outline-light" href="/stay-connected/"
+            >Stay Connected</a
+          >
+        </div>
+        <div class="hero-banner__highlights reveal reveal--5">
+          {heroHighlights.map((item) => <span>{item}</span>)}
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section-band section-band--accent" data-reveal>
+    <div class="shell newsletter-feature">
+      <div class="newsletter-feature__intro">
+        <SectionHeading
+          eyebrow="Join the Community"
+          title="Stay connected for updates on local schools, community issues, advocacy, and ways to make a difference together.."
+          text="Together we can build the change we want to see in our schools and communities. Join for occasional updates on practical school ideas, hands-on learning, robotics, community collaboration, and future projects."
+        />
+        <div class="metric-row">
+          {
+            heroMetrics.map((item) => (
+              <article class="metric-card metric-card--light">
+                <strong>{item.value}</strong>
+                <span>{item.label}</span>
+              </article>
+            ))
+          }
+        </div>
+      </div>
+      <NewsletterSignup
+        title="Let’s Build Better Schools Together"
+        text="Share your name, email, and interests to receive future updates from Jeremy on education leadership, STEM, community partnership, and hands-on learning."
+        sourceContext="homepage-top-signup"
+      />
+    </div>
+  </section>
+
+  <section class="section-band section-band--paper" data-reveal>
+    <div class="shell">
+      <SectionHeading
+        eyebrow="Mission"
+      
+      />
+      <div class="signal-grid">
+        {
+          missionCards.map((item) => (
+            <article class="signal-card">
+              <h3>{item.title}</h3>
+              <p>{item.text}</p>
+            </article>
+          ))
+        }
+      </div>
+    </div>
+  </section>
+
+  <section class="section-band section-band--navy" data-reveal>
+    <div class="shell">
+      <SectionHeading
+        eyebrow="Core Values"
+       
+      />
+      <div class="signal-grid">
+        {
+          advocacyAreas.map((item) => (
+            <article class="signal-card signal-card--dark">
+              <p class="eyebrow">{item.eyebrow}</p>
+              <h3>{item.title}</h3>
+              <p>{item.text}</p>
+            </article>
+          ))
+        }
+      </div>
+    </div>
+  </section>
+
+  <section class="section-band section-band--slate" data-reveal>
+    <div class="shell stem-layout">
+      <div class="stem-layout__lead">
+        <SectionHeading
+          eyebrow="STEM and Hands-On Learning"
+          title="Applied problem solving belong in the center of the conversation."
+          text="Jeremy’s view of innovation is shaped experiences in project based learning. It is people-first, practical, and future-ready."
+        />
+      </div>
+      <div class="list-grid">
+        {
+          stemFeatures.map((item) => (
+            <article class="list-card list-card--tinted">
+              <h3>{item.title}</h3>
+              <p>{item.text}</p>
+            </article>
+          ))
+        }
+      </div>
+    </div>
+  </section>
+
+  <section class="section-band section-band--paper" data-reveal>
+    <div class="shell">
+      <SectionHeading
+        eyebrow="Community and Partnership"
+        title="Bringing people together across schools and communities is part of the work."
+        text="Let's work togehter to build stronger connections between families, schools, and the wider community. Jeremy's work is focused on fostering collaboration, amplifying student voices, and creating opportunities for meaningful engagement that benefits everyone involved."
+      />
+      <div class="signal-grid">
+        {
+          communitySignals.map((item) => (
+            <article class="signal-card">
+              <h3>{item.title}</h3>
+              <p>{item.text}</p>
+            </article>
+          ))
+        }
+      </div>
+    </div>
+  </section>
+
+  <section class="section-band section-band--warm" data-reveal>
+    <div class="shell">
+      <SectionHeading
+        eyebrow="Projects"
+        title="Practical work that supports learning beyond a single classroom."
+        text="Projects remain part of Jeremy’s public story, but they now sit inside a larger leadership and partnership narrative."
+      />
+      <div class="project-grid">
+        {
+          projects.slice(0, 2).map((project) => (
+            <article class="project-card">
+              <div class="project-card__header">
+                <div>
+                  <p class="project-card__eyebrow">{project.category}</p>
+                  <h3>{project.name}</h3>
+                </div>
+                <a href={project.href} target="_blank" rel="noreferrer">
+                  Visit Site
+                </a>
+              </div>
+              <div class="project-card__grid">
+                <p>
+                  <strong>What it is</strong> {project.what}
+                </p>
+                <p>
+                  <strong>Why it matters</strong> {project.impact}
+                </p>
+              </div>
+            </article>
+          ))
+        }
+      </div>
+    </div>
+  </section>
+
+  <section class="section-band section-band--cta" data-reveal>
+    <div class="shell">
+      <div class="cta-band">
+        <div class="stack">
+          <p class="eyebrow">Get Updates</p>
+          <h3>
+            Stay connected to Jeremy’s work in education, STEM, and community
+            partnership.
+          </h3>
+          <p>
+            Join for occasional updates on practical school ideas, hands-on
+            learning, robotics, community collaboration, and future projects.
+          </p>
+        </div>
+        <NewsletterSignup
+          compact={true}
+          eyebrow="Get Updates"
+          title="Join the Community"
+          text="A second signup point keeps the call to action visible without making the site feel transactional."
+          sourceContext="homepage-bottom-signup"
+        />
+      </div>
+    </div>
+  </section>
+</SiteLayout>

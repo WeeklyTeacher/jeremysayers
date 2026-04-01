@@ -1,0 +1,5 @@
+# /home/r_/projects/jeremysayers/public/robots.txt
+User-agent: *
+Allow: /
+
+Sitemap: https://jeremysayers.com/sitemap.xml

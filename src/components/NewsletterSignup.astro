@@ -1,0 +1,83 @@
+---
+// /home/r_/projects/jeremysayers/src/components/NewsletterSignup.astro
+interface Props {
+  title?: string;
+  text?: string;
+  sourceContext?: string;
+  compact?: boolean;
+  eyebrow?: string;
+}
+
+const {
+  title = 'Let’s build better schools together',
+  text = 'Get updates on education leadership, STEM, robotics, community partnership, and practical school innovation.',
+  sourceContext = 'site',
+  compact = false,
+  eyebrow = 'Stay Connected'
+} = Astro.props;
+---
+
+<section class={`signup-card ${compact ? 'signup-card--compact' : ''}`}>
+  <div class="signup-card__copy">
+    <p class="eyebrow">{eyebrow}</p>
+    <h3>{title}</h3>
+    <p>{text}</p>
+  </div>
+  <form class={`newsletter-form ${compact ? 'newsletter-form--compact' : ''}`} method="post" action="/api/newsletter" data-newsletter-form>
+    <div class="newsletter-form__row">
+      <label>
+        <span class="sr-only">First Name</span>
+        <input type="text" name="firstName" placeholder="First Name" autocomplete="given-name" />
+      </label>
+      <label>
+        <span class="sr-only">Last Name</span>
+        <input type="text" name="lastName" placeholder="Last Name" autocomplete="family-name" />
+      </label>
+    </div>
+    <label>
+      <span class="sr-only">Email Address</span>
+      <input type="email" name="email" placeholder="Email Address" autocomplete="email" required />
+    </label>
+    <label>
+      <span class="sr-only">Interests or Comments</span>
+      <textarea name="interests" rows="4" placeholder="Interests or Comments"></textarea>
+    </label>
+    <input type="hidden" name="sourceContext" value={sourceContext} />
+    <button type="submit">Join the Community</button>
+    <p class="newsletter-form__status" data-newsletter-status aria-live="polite"></p>
+  </form>
+  <p class="fine-print">
+    This updates form is intended for community-minded communication about schools, ideas, projects, and future work.
+  </p>
+</section>
+
+<script>
+  const forms = Array.from(document.querySelectorAll('[data-newsletter-form]'));
+
+  for (const form of forms) {
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const status = form.querySelector('[data-newsletter-status]');
+      const button = form.querySelector('button');
+      if (!(status instanceof HTMLElement) || !(button instanceof HTMLButtonElement)) return;
+
+      status.textContent = 'Submitting...';
+      button.disabled = true;
+
+      try {
+        const response = await fetch(form.action, {
+          method: 'POST',
+          body: new FormData(form),
+          headers: { Accept: 'application/json' }
+        });
+        const payload = await response.json();
+        status.textContent = payload.message ?? 'Thanks for joining.';
+        if (response.ok) form.reset();
+      } catch {
+        status.textContent = 'Something went wrong. Please try again.';
+      } finally {
+        button.disabled = false;
+      }
+    });
+  }
+</script>

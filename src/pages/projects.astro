@@ -1,0 +1,40 @@
+---
+// /home/r_/projects/jeremysayers/src/pages/projects.astro
+import PageIntro from '../components/PageIntro.astro';
+import ProjectCard from '../components/ProjectCard.astro';
+import SectionHeading from '../components/SectionHeading.astro';
+import SiteLayout from '../layouts/SiteLayout.astro';
+import { projects, site } from '../data/site';
+
+const structuredData = {
+  '@context': 'https://schema.org',
+  '@type': 'CollectionPage',
+  name: 'Projects by Jeremy Sayers',
+  url: `${site.url}/projects/`,
+  description: 'Projects and websites built or supported by Jeremy Sayers.'
+};
+---
+
+<SiteLayout
+  title="Projects | Jeremy Sayers"
+  description="Explore projects by Jeremy Sayers, including EdThings.com, TechSparked.org, and other practical education-focused work."
+  structuredData={structuredData}
+>
+  <PageIntro
+    title="Projects"
+    description="Jeremy builds useful things. These projects show how his work moves from ideas into practical resources, public-facing tools, and long-term educational value."
+  />
+
+  <section>
+    <div class="shell">
+      <SectionHeading
+        eyebrow="Educator-Builder Work"
+        title="Projects that support learning, innovation, and public usefulness."
+        text="The goal is not novelty for its own sake. Each project is intended to make something more accessible, more useful, or more possible."
+      />
+      <div class="project-grid">
+        {projects.map((project) => <ProjectCard {...project} />)}
+      </div>
+    </div>
+  </section>
+</SiteLayout>

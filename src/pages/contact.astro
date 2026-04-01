@@ -1,0 +1,47 @@
+---
+// /home/r_/projects/jeremysayers/src/pages/contact.astro
+import NewsletterSignup from '../components/NewsletterSignup.astro';
+import PageIntro from '../components/PageIntro.astro';
+import SectionHeading from '../components/SectionHeading.astro';
+import SiteLayout from '../layouts/SiteLayout.astro';
+import { contactTopics, site } from '../data/site';
+---
+
+<SiteLayout
+  title="Contact | Jeremy Sayers"
+  description="Contact Jeremy Sayers for speaking, collaborations, school partnerships, media, or community-focused invitations."
+>
+  <PageIntro
+    title="Contact"
+    description="For speaking, collaboration, school partnerships, media, or community-focused invitations, this page offers a clear way to connect."
+  />
+
+  <section>
+    <div class="shell contact-grid">
+      <div class="stack">
+        <SectionHeading
+          eyebrow="Reach Out"
+          title="Professional, thoughtful, and practical conversations are welcome."
+          text="This platform is designed for education, public-interest work, and useful collaboration."
+        />
+        <article class="list-card">
+          <h3>Common topics</h3>
+          <ul>
+            {contactTopics.map((topic) => <li>{topic}</li>)}
+          </ul>
+        </article>
+        <article class="panel">
+          <p class="eyebrow">Email</p>
+          <h3><a href={`mailto:${site.email}`}>{site.email}</a></h3>
+          <p>{site.location}</p>
+        </article>
+      </div>
+
+      <NewsletterSignup
+        title="Prefer updates instead?"
+        text="Join the list to follow Jeremy’s education ideas, projects, partnerships, and future work."
+        sourceContext="contact-page"
+      />
+    </div>
+  </section>
+</SiteLayout>

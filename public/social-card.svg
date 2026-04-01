@@ -1,0 +1,21 @@
+<!-- /home/r_/projects/jeremysayers/public/social-card.svg -->
+<svg width="1200" height="630" viewBox="0 0 1200 630" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1200" height="630" fill="#F5F1EA"/>
+  <rect x="48" y="48" width="1104" height="534" rx="36" fill="#0D2543"/>
+  <rect x="76" y="76" width="1048" height="478" rx="28" fill="url(#paint0_linear)"/>
+  <path d="M76 188H1124" stroke="rgba(255,255,255,0.18)" stroke-width="2"/>
+  <path d="M160 76V554" stroke="rgba(255,255,255,0.12)" stroke-width="2"/>
+  <circle cx="112" cy="132" r="10" fill="#B68D4A"/>
+  <circle cx="142" cy="132" r="10" fill="#9F2F37"/>
+  <text x="210" y="220" fill="white" font-family="Georgia, serif" font-size="72" font-weight="700">Jeremy Sayers</text>
+  <text x="210" y="286" fill="#D7E1F0" font-family="Segoe UI, sans-serif" font-size="28">Educator, builder, writer, and community-minded leader</text>
+  <text x="210" y="340" fill="#D7E1F0" font-family="Segoe UI, sans-serif" font-size="28">Thoughtful public-interest work rooted in Torrance, California</text>
+  <rect x="210" y="404" width="184" height="56" rx="28" fill="#9F2F37"/>
+  <text x="246" y="440" fill="white" font-family="Segoe UI, sans-serif" font-size="24" font-weight="700">JeremySayers.com</text>
+  <defs>
+    <linearGradient id="paint0_linear" x1="76" y1="76" x2="1124" y2="554" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#16365F"/>
+      <stop offset="1" stop-color="#102947"/>
+    </linearGradient>
+  </defs>
+</svg>

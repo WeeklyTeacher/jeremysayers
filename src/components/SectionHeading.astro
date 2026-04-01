@@ -1,0 +1,17 @@
+---
+// /home/r_/projects/jeremysayers/src/components/SectionHeading.astro
+interface Props {
+  eyebrow?: string;
+  title: string;
+  text?: string;
+  align?: 'left' | 'center';
+}
+
+const { eyebrow, title, text, align = 'left' } = Astro.props;
+---
+
+<div class={`section-heading section-heading--${align}`}>
+  {eyebrow && <p class="eyebrow">{eyebrow}</p>}
+  <h2>{title}</h2>
+  {text && <p>{text}</p>}
+</div>

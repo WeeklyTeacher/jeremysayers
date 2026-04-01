@@ -1,0 +1,35 @@
+<!-- /home/r_/projects/jeremysayers/public/hero-education.svg -->
+<svg width="1600" height="900" viewBox="0 0 1600 900" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1600" height="900" fill="#0D2543"/>
+  <rect width="1600" height="900" fill="url(#paint0_linear)"/>
+  <circle cx="1318" cy="154" r="240" fill="#9F2F37" fill-opacity="0.18"/>
+  <circle cx="276" cy="688" r="262" fill="#94A8BD" fill-opacity="0.18"/>
+  <circle cx="938" cy="520" r="328" fill="#B68D4A" fill-opacity="0.13"/>
+  <rect x="106" y="144" width="540" height="302" rx="28" fill="white" fill-opacity="0.08" stroke="white" stroke-opacity="0.18"/>
+  <rect x="162" y="210" width="166" height="166" rx="20" fill="#D9E4F0" fill-opacity="0.2"/>
+  <rect x="352" y="210" width="240" height="26" rx="13" fill="white" fill-opacity="0.3"/>
+  <rect x="352" y="258" width="194" height="18" rx="9" fill="white" fill-opacity="0.18"/>
+  <rect x="352" y="292" width="164" height="18" rx="9" fill="white" fill-opacity="0.18"/>
+  <rect x="352" y="338" width="210" height="24" rx="12" fill="#9F2F37" fill-opacity="0.7"/>
+  <path d="M916 180H1282" stroke="white" stroke-opacity="0.18" stroke-width="2"/>
+  <path d="M916 222H1380" stroke="white" stroke-opacity="0.1" stroke-width="2"/>
+  <path d="M916 264H1324" stroke="white" stroke-opacity="0.1" stroke-width="2"/>
+  <path d="M1036 464L1112 388L1200 476L1288 320L1384 436" stroke="#D9E4F0" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="1036" cy="464" r="16" fill="#B68D4A"/>
+  <circle cx="1112" cy="388" r="16" fill="#9F2F37"/>
+  <circle cx="1200" cy="476" r="16" fill="#D9E4F0"/>
+  <circle cx="1288" cy="320" r="16" fill="#B68D4A"/>
+  <circle cx="1384" cy="436" r="16" fill="#9F2F37"/>
+  <rect x="174" y="562" width="1252" height="206" rx="34" fill="white" fill-opacity="0.08" stroke="white" stroke-opacity="0.14"/>
+  <rect x="248" y="620" width="222" height="92" rx="22" fill="#16365F"/>
+  <rect x="514" y="620" width="222" height="92" rx="22" fill="#9F2F37"/>
+  <rect x="780" y="620" width="222" height="92" rx="22" fill="#4C637C"/>
+  <rect x="1046" y="620" width="222" height="92" rx="22" fill="#B68D4A"/>
+  <defs>
+    <linearGradient id="paint0_linear" x1="156" y1="78" x2="1432" y2="842" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#16365F"/>
+      <stop offset="0.52" stop-color="#21456A"/>
+      <stop offset="1" stop-color="#0F223D"/>
+    </linearGradient>
+  </defs>
+</svg>

@@ -1,0 +1,30 @@
+---
+// /home/r_/projects/jeremysayers/src/components/ProjectCard.astro
+interface Props {
+  name: string;
+  href: string;
+  category: string;
+  what: string;
+  why: string;
+  audience: string;
+  impact: string;
+}
+
+const { name, href, category, what, why, audience, impact } = Astro.props;
+---
+
+<article class="project-card">
+  <div class="project-card__header">
+    <div>
+      <p class="project-card__eyebrow">{category}</p>
+      <h3>{name}</h3>
+    </div>
+    <a href={href} target="_blank" rel="noreferrer">Visit Site</a>
+  </div>
+  <div class="project-card__grid">
+    <p><strong>What it is</strong> {what}</p>
+    <p><strong>Why it exists</strong> {why}</p>
+    <p><strong>Who it serves</strong> {audience}</p>
+    <p><strong>Why it matters</strong> {impact}</p>
+  </div>
+</article>

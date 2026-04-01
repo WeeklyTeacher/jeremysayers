@@ -1,0 +1,198 @@
+---
+// /home/r_/projects/jeremysayers/src/layouts/SiteLayout.astro
+import GoogleAnalytics from "../components/GoogleAnalytics.astro";
+import "../styles/site.css";
+import { footerLinks, navLinks, site } from "../data/site";
+
+interface Props {
+  title: string;
+  description: string;
+  path?: string;
+  type?: "website" | "article";
+  image?: string;
+  publishedTime?: string;
+  structuredData?: Record<string, unknown> | Array<Record<string, unknown>>;
+}
+
+const {
+  title,
+  description,
+  path = Astro.url.pathname,
+  type = "website",
+  image = "/social-card.svg",
+  publishedTime,
+  structuredData,
+} = Astro.props;
+
+const normalizedPath =
+  path === "/" ? "/" : path.endsWith("/") ? path : `${path}/`;
+const canonical = new URL(normalizedPath, site.url).toString();
+const socialImage = new URL(image, site.url).toString();
+const currentYear = new Date().getFullYear();
+const isActive = (href: string) =>
+  href === "/" ? normalizedPath === "/" : normalizedPath.startsWith(href);
+
+const personSchema = {
+  "@context": "https://schema.org",
+  "@type": "Person",
+  name: site.name,
+  url: site.url,
+  description: site.description,
+  email: site.email,
+  homeLocation: {
+    "@type": "Place",
+    name: site.location,
+  },
+  jobTitle: "Educator, STEM advocate, and community-minded leader",
+};
+
+const websiteSchema = {
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  name: site.name,
+  url: site.url,
+  description: site.description,
+};
+
+const extraSchemas = Array.isArray(structuredData)
+  ? structuredData
+  : structuredData
+    ? [structuredData]
+    : [];
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="generator" content={Astro.generator} />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="canonical" href={canonical} />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <meta name="robots" content="index,follow" />
+    <meta property="og:type" content={type} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:site_name" content={site.name} />
+    <meta property="og:image" content={socialImage} />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={socialImage} />
+    {
+      publishedTime && (
+        <meta property="article:published_time" content={publishedTime} />
+      )
+    }
+    <script
+      type="application/ld+json"
+      set:html={JSON.stringify(personSchema)}
+    />
+    <script
+      type="application/ld+json"
+      set:html={JSON.stringify(websiteSchema)}
+    />
+    {
+      extraSchemas.map((schema) => (
+        <script type="application/ld+json" set:html={JSON.stringify(schema)} />
+      ))
+    }
+    <GoogleAnalytics />
+  </head>
+  <body>
+    <div class="site-chroma" aria-hidden="true"></div>
+    <header class="site-header">
+      <div class="shell site-header__inner">
+        <a class="site-logo" href="/">
+          <span>Jeremy</span>
+          <span>Sayers</span>
+        </a>
+        <nav class="site-nav" aria-label="Primary">
+          {
+            navLinks.map((link) => (
+              <a
+                href={link.href}
+                aria-current={isActive(link.href) ? "page" : undefined}
+              >
+                {link.label}
+              </a>
+            ))
+          }
+        </nav>
+      </div>
+    </header>
+
+    <main>
+      <slot />
+    </main>
+
+    <footer class="site-footer">
+      <div class="shell site-footer__frame">
+        <div class="site-footer__top">
+          <p class="eyebrow">Jeremy Sayers</p>
+          <p class="site-footer__message">
+            Stay connected for updates on education, local community issues,
+            advocacy, and projects that bring people together.
+          </p>
+        </div>
+
+        <div class="site-footer__columns">
+          <div>
+            <h3>Site</h3>
+            <div class="footer-link-list">
+              {navLinks.map((link) => <a href={link.href}>{link.label}</a>)}
+            </div>
+          </div>
+
+          <div>
+            <h3>More</h3>
+            <div class="footer-link-list">
+              {footerLinks.map((link) => <a href={link.href}>{link.label}</a>)}
+            </div>
+          </div>
+
+          <div>
+            <h3>Connect</h3>
+            <div class="footer-link-list">
+              <a href={`mailto:${site.email}`}>{site.email}</a>
+              <span>{site.location}</span>
+              <a href="/stay-connected/">Stay Connected</a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="shell site-footer__bottom">
+        <small>© {currentYear} Jeremy Sayers. All rights reserved.</small>
+      </div>
+    </footer>
+    <script>
+      const prefersReducedMotion = window.matchMedia(
+        "(prefers-reduced-motion: reduce)",
+      ).matches;
+
+      if (!prefersReducedMotion) {
+        const sections = Array.from(document.querySelectorAll("[data-reveal]"));
+        const observer = new IntersectionObserver(
+          (entries) => {
+            for (const entry of entries) {
+              if (!entry.isIntersecting) continue;
+              entry.target.classList.add("is-visible");
+              observer.unobserve(entry.target);
+            }
+          },
+          { threshold: 0.18 },
+        );
+
+        for (const section of sections) observer.observe(section);
+      } else {
+        for (const section of document.querySelectorAll("[data-reveal]")) {
+          section.classList.add("is-visible");
+        }
+      }
+    </script>
+  </body>
+</html>
