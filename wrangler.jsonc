@@ -14,7 +14,7 @@
       "database_name": "jeremysayers_d1",
       "database_id": "5847ba6b-2a64-4fe4-9417-a7200b81a974"
     }
-  ]
+  ],
 
   // Astro's Cloudflare adapter generates the deployable Worker config at
   // dist/server/wrangler.json during `npm run build`.
