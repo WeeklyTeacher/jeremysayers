@@ -15,6 +15,27 @@ const {
   compact = false,
   eyebrow = 'Stay Connected'
 } = Astro.props;
+
+const newsletterMessages = {
+  success: 'Thanks. You are on the list for future updates from Jeremy.',
+  'missing-email': 'Please enter your email address.',
+  'invalid-email': 'Please enter a valid email address.',
+  'missing-first-name': 'Please enter your first name.',
+  duplicate: 'That email is already subscribed for updates.',
+  'bad-method': 'This signup request used the wrong method.',
+  'bad-request': 'The signup request could not be processed.',
+  'db-error': 'The newsletter service is temporarily unavailable. Please try again.',
+  'unknown-error': 'Something went wrong. Please try again.'
+} as const;
+
+type NewsletterState = keyof typeof newsletterMessages;
+
+const initialNewsletterState = Astro.url.searchParams.get('newsletter');
+const initialNewsletterMessage =
+  initialNewsletterState &&
+  initialNewsletterState in newsletterMessages
+    ? newsletterMessages[initialNewsletterState as NewsletterState]
+    : '';
 ---
 
 <section class={`signup-card ${compact ? 'signup-card--compact' : ''}`}>
@@ -27,7 +48,7 @@ const {
     <div class="newsletter-form__row">
       <label>
         <span class="sr-only">First Name</span>
-        <input type="text" name="firstName" placeholder="First Name" autocomplete="given-name" />
+        <input type="text" name="firstName" placeholder="First Name" autocomplete="given-name" required />
       </label>
       <label>
         <span class="sr-only">Last Name</span>
@@ -44,7 +65,14 @@ const {
     </label>
     <input type="hidden" name="sourceContext" value={sourceContext} />
     <button type="submit">Join the Community</button>
-    <p class="newsletter-form__status" data-newsletter-status aria-live="polite"></p>
+    <p
+      class="newsletter-form__status"
+      data-newsletter-status
+      data-initial-newsletter-state={initialNewsletterState ?? ''}
+      aria-live="polite"
+    >
+      {initialNewsletterMessage}
+    </p>
   </form>
   <p class="fine-print">
     This updates form is intended for community-minded communication about schools, ideas, projects, and future work.
@@ -52,6 +80,38 @@ const {
 </section>
 
 <script>
+  const newsletterMessages = {
+    success: 'Thanks. You are on the list for future updates from Jeremy.',
+    'missing-email': 'Please enter your email address.',
+    'invalid-email': 'Please enter a valid email address.',
+    'missing-first-name': 'Please enter your first name.',
+    duplicate: 'That email is already subscribed for updates.',
+    'bad-method': 'This signup request used the wrong method.',
+    'bad-request': 'The signup request could not be processed.',
+    'db-error': 'The newsletter service is temporarily unavailable. Please try again.',
+    'unknown-error': 'Something went wrong. Please try again.'
+  };
+
+  const setNewsletterState = (state) => {
+    const url = new URL(window.location.href);
+    url.searchParams.set('newsletter', state);
+    window.history.replaceState({}, '', url);
+  };
+
+  const syncStatusFromUrl = () => {
+    const url = new URL(window.location.href);
+    const state = url.searchParams.get('newsletter');
+    const message = state && newsletterMessages[state] ? newsletterMessages[state] : '';
+
+    for (const status of document.querySelectorAll('[data-newsletter-status]')) {
+      if (status instanceof HTMLElement) {
+        status.textContent = message;
+      }
+    }
+  };
+
+  syncStatusFromUrl();
+
   const forms = Array.from(document.querySelectorAll('[data-newsletter-form]'));
 
   for (const form of forms) {
@@ -70,11 +130,24 @@ const {
           body: new FormData(form),
           headers: { Accept: 'application/json' }
         });
+
         const payload = await response.json();
-        status.textContent = payload.message ?? 'Thanks for joining.';
-        if (response.ok) form.reset();
+        const state =
+          payload && typeof payload.state === 'string' && newsletterMessages[payload.state]
+            ? payload.state
+            : response.ok
+              ? 'success'
+              : 'unknown-error';
+
+        setNewsletterState(state);
+        syncStatusFromUrl();
+
+        if (state === 'success') {
+          form.reset();
+        }
       } catch {
-        status.textContent = 'Something went wrong. Please try again.';
+        setNewsletterState('unknown-error');
+        syncStatusFromUrl();
       } finally {
         button.disabled = false;
       }
