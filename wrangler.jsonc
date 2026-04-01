@@ -8,39 +8,16 @@
     "enabled": true
   },
 
+  "vars": {
+    "PUBLIC_TURNSTILE_SITE_KEY": "0x4AAAAAACzHeJme7AQS9WEb",
+    "PUBLIC_GA_MEASUREMENT_ID": ""
+  },
+
   "d1_databases": [
     {
       "binding": "DB_JEREMYSAYERS",
       "database_name": "jeremysayers_d1",
       "database_id": "5847ba6b-2a64-4fe4-9417-a7200b81a974"
     }
-  ],
-
-  // Astro's Cloudflare adapter generates the deployable Worker config at
-  // dist/server/wrangler.json during `npm run build`.
-  //
-  // Keep environment-specific bindings in the Cloudflare dashboard or add them
-  // here later if you want local Wrangler config to mirror production.
-  //
-  // Future public env vars:
-  // ,"vars": {
-  //   "PUBLIC_GA_MEASUREMENT_ID": ""
-  // }
-  //
-  // Future server-only env vars for the newsletter endpoint may look like:
-  // ,"vars": {
-  //   "NEWSLETTER_API_URL": ""
-  // }
-  //
-  // If you enable Astro sessions or Cloudflare image bindings in production,
-  // configure these in the dashboard to match the generated Worker output:
-  // ,"kv_namespaces": [
-  //   {
-  //     "binding": "SESSION",
-  //     "id": "your-session-kv-namespace-id"
-  //   }
-  // ]
-  // ,"images": {
-  //   "binding": "IMAGES"
-  // }
+  ]
 }
