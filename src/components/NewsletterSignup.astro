@@ -115,6 +115,7 @@ const isError =
   </p>
 </section>
 
+{turnstileSiteKey && <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>}
 <script is:inline>
   window.onNewsletterTurnstileSuccess = (token) => {
     console.log('[newsletter-form] callback fired', {
@@ -198,4 +199,3 @@ const isError =
     });
   });
 </script>
-{turnstileSiteKey && <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>}
