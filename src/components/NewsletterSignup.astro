@@ -119,42 +119,50 @@ const isError =
 
 {turnstileSiteKey && <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>}
 <script is:inline>
-  const syncNewsletterTurnstileToken = (form, token = '') => {
-    const tokenInput = form?.querySelector('[data-turnstile-response]');
-    if (tokenInput instanceof HTMLInputElement) {
-      tokenInput.value = token;
-    }
-  };
+  (() => {
+    if (window.__jeremyNewsletterTurnstileInit) return;
+    window.__jeremyNewsletterTurnstileInit = true;
 
-  const setNewsletterSubmitEnabled = (form, enabled) => {
-    const submitButton = form?.querySelector('[data-newsletter-submit]');
-    if (submitButton instanceof HTMLButtonElement) {
-      submitButton.disabled = !enabled;
-    }
-  };
-
-  window.onNewsletterTurnstileSuccess = (token) => {
-    document.querySelectorAll('[data-newsletter-form]').forEach((form) => {
-      syncNewsletterTurnstileToken(form, token);
-      setNewsletterSubmitEnabled(form, true);
-
-      if (form instanceof HTMLFormElement && form.dataset.pendingSubmit === 'true') {
-        form.dataset.pendingSubmit = 'false';
-        HTMLFormElement.prototype.submit.call(form);
+    window.__jeremySyncNewsletterTurnstileToken = (form, token = '') => {
+      const tokenInput = form?.querySelector('[data-turnstile-response]');
+      if (tokenInput instanceof HTMLInputElement) {
+        tokenInput.value = token;
       }
-    });
-  };
+    };
 
-  window.onNewsletterTurnstileExpired = () => {
-    document.querySelectorAll('[data-newsletter-form]').forEach((form) => {
-      syncNewsletterTurnstileToken(form, '');
-      setNewsletterSubmitEnabled(form, false);
-    });
-  };
+    window.__jeremySetNewsletterSubmitEnabled = (form, enabled) => {
+      const submitButton = form?.querySelector('[data-newsletter-submit]');
+      if (submitButton instanceof HTMLButtonElement) {
+        submitButton.disabled = !enabled;
+      }
+    };
 
-  document.querySelectorAll('[data-newsletter-form]').forEach((form) => {
-    form.addEventListener('submit', (event) => {
-      const injectedTurnstileInput = form.querySelector('input[name="cf-turnstile-response"]:not([data-turnstile-response])');
+    window.onNewsletterTurnstileSuccess = (token) => {
+      document.querySelectorAll('[data-newsletter-form]').forEach((form) => {
+        window.__jeremySyncNewsletterTurnstileToken(form, token);
+        window.__jeremySetNewsletterSubmitEnabled(form, true);
+
+        if (form instanceof HTMLFormElement && form.dataset.pendingSubmit === 'true') {
+          form.dataset.pendingSubmit = 'false';
+          HTMLFormElement.prototype.submit.call(form);
+        }
+      });
+    };
+
+    window.onNewsletterTurnstileExpired = () => {
+      document.querySelectorAll('[data-newsletter-form]').forEach((form) => {
+        window.__jeremySyncNewsletterTurnstileToken(form, '');
+        window.__jeremySetNewsletterSubmitEnabled(form, false);
+      });
+    };
+
+    document.addEventListener('submit', (event) => {
+      const form = event.target;
+      if (!(form instanceof HTMLFormElement) || !form.matches('[data-newsletter-form]')) return;
+
+      const injectedTurnstileInput = form.querySelector(
+        'input[name="cf-turnstile-response"]:not([data-turnstile-response])'
+      );
       const hiddenTurnstileInput = form.querySelector('[data-turnstile-response]');
       const turnstileWidget = form.querySelector('[data-turnstile-widget]');
 
@@ -171,15 +179,9 @@ const isError =
 
       if (turnstileWidget instanceof HTMLElement && !turnstileToken) {
         event.preventDefault();
+        form.dataset.pendingSubmit = 'true';
 
-        if (form instanceof HTMLFormElement) {
-          form.dataset.pendingSubmit = 'true';
-        }
-
-        if (
-          window.turnstile &&
-          typeof window.turnstile.execute === 'function'
-        ) {
+        if (window.turnstile && typeof window.turnstile.execute === 'function') {
           window.turnstile.execute(turnstileWidget);
         }
 
@@ -194,5 +196,5 @@ const isError =
         );
       }
     });
-  });
+  })();
 </script>
