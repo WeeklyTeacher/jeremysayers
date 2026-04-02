@@ -8,7 +8,8 @@ export const GET: APIRoute = async () => {
     '/media/',
     '/speaking/',
     '/get-involved/',
-    '/issues/'
+    '/issues/',
+    '/privacy-policy/'
   ];
 
   const xml = `<?xml version="1.0" encoding="UTF-8"?>

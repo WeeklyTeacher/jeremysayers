@@ -236,5 +236,6 @@ export const footerLinks = [
   { href: '/media/', label: 'Media' },
   { href: '/speaking/', label: 'Speaking' },
   { href: '/get-involved/', label: 'Get Involved' },
-  { href: '/issues/', label: 'Issues' }
+  { href: '/issues/', label: 'Issues' },
+  { href: '/privacy-policy/', label: 'Privacy Policy' }
 ];

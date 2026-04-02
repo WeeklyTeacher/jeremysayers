@@ -1,0 +1,53 @@
+---
+// /home/r_/projects/jeremysayers/src/pages/newsletter/unsubscribe.astro
+import { env } from 'cloudflare:workers';
+import PageIntro from '../../components/PageIntro.astro';
+import SiteLayout from '../../layouts/SiteLayout.astro';
+import { unsubscribeNewsletterSubscription } from '../../lib/newsletter/service';
+
+export const prerender = false;
+
+const token = Astro.url.searchParams.get('token')?.trim() || '';
+const result = token
+  ? await unsubscribeNewsletterSubscription({ env, token })
+  : { outcome: 'invalid' as const };
+---
+
+<SiteLayout
+  title="Unsubscribe | Jeremy Sayers"
+  description="Manage your Jeremy Sayers newsletter subscription."
+  showSitewideSignup={false}
+  robots="noindex,nofollow"
+>
+  <PageIntro
+    title="Unsubscribe"
+    description="Manage your email subscription for updates from Jeremy Sayers."
+  />
+
+  <section class="section-band section-band--paper">
+    <div class="shell">
+      <article class="panel action-panel">
+        {
+          result.outcome === 'unsubscribed' ? (
+            <>
+              <h2>You have been unsubscribed.</h2>
+              <p>
+                You will no longer receive newsletter emails from Jeremy Sayers at {result.email}.
+              </p>
+              <p><a class="button button--primary" href="/">Return to the site</a></p>
+            </>
+          ) : (
+            <>
+              <h2>This unsubscribe link is not valid.</h2>
+              <p>
+                The link may have already been used or may no longer be active. If you still need help, contact Jeremy
+                directly through the site.
+              </p>
+              <p><a class="button button--primary" href="/contact/">Go to Contact</a></p>
+            </>
+          )
+        }
+      </article>
+    </div>
+  </section>
+</SiteLayout>

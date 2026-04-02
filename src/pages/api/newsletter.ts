@@ -1,35 +1,23 @@
 // /home/r_/projects/jeremysayers/src/pages/api/newsletter.ts
 import type { APIRoute } from 'astro';
 import { env } from 'cloudflare:workers';
+import {
+  isValidNewsletterEmail,
+  normalizeNewsletterEmail,
+  normalizeNewsletterOptional,
+  normalizeNewsletterRequired,
+  resolveNewsletterRedirectPath,
+  submitNewsletterSignup
+} from '../../lib/newsletter/service';
 
 export const prerender = false;
 
-const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const DEBUG = import.meta.env.DEV;
-
-const normalizeOptional = (value: FormDataEntryValue | null, maxLength: number) => {
-  if (typeof value !== 'string') return null;
-  const trimmed = value.trim();
-  if (!trimmed) return null;
-  return trimmed.slice(0, maxLength);
-};
-
-const normalizeRequired = (value: FormDataEntryValue | null, maxLength: number) => {
-  if (typeof value !== 'string') return null;
-  const trimmed = value.trim();
-  if (!trimmed) return null;
-  return trimmed.slice(0, maxLength);
-};
-
-const resolveRedirectPath = (candidate: string | null, fallback = '/') => {
-  if (!candidate || typeof candidate !== 'string') return fallback;
-  if (!candidate.startsWith('/')) return fallback;
-  return candidate.length > 200 ? fallback : candidate;
-};
 
 type SignupStatus =
   | 'success'
   | 'duplicate'
+  | 'suppressed'
   | 'missing-email'
   | 'invalid-email'
   | 'missing-first-name'
@@ -56,13 +44,6 @@ const logStep = (step: string, data?: Record<string, unknown>) => {
   console.log(`[newsletter] ${step}`, data ?? {});
 };
 
-const readNewsletterTablePresence = async (newsletterDb: D1Database) => {
-  return newsletterDb
-    .prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name = ?1 LIMIT 1")
-    .bind('newsletter_subscribers')
-    .first<{ name: string }>();
-};
-
 export const POST: APIRoute = async ({ request, redirect }) => {
   let sourcePage = '/';
   let sourceContext: string | null = null;
@@ -85,13 +66,16 @@ export const POST: APIRoute = async ({ request, redirect }) => {
 
     const formData = await request.formData();
 
-    const firstName = normalizeRequired(formData.get('firstName'), 120);
-    const lastName = normalizeOptional(formData.get('lastName'), 120);
-    const emailRaw = normalizeRequired(formData.get('email'), 254);
-    const interests = normalizeOptional(formData.get('interests'), 2000);
-    sourceContext = normalizeOptional(formData.get('sourceContext'), 120);
-    const sourcePageFromForm = resolveRedirectPath(normalizeOptional(formData.get('sourcePage'), 200), '/');
-    const turnstileToken = normalizeOptional(formData.get('cf-turnstile-response'), 4096);
+    const firstName = normalizeNewsletterRequired(formData.get('firstName'), 120);
+    const lastName = normalizeNewsletterOptional(formData.get('lastName'), 120);
+    const emailRaw = normalizeNewsletterRequired(formData.get('email'), 254);
+    const interests = normalizeNewsletterOptional(formData.get('interests'), 2000);
+    sourceContext = normalizeNewsletterOptional(formData.get('sourceContext'), 120);
+    const sourcePageFromForm = resolveNewsletterRedirectPath(
+      normalizeNewsletterOptional(formData.get('sourcePage'), 200),
+      '/'
+    );
+    const turnstileToken = normalizeNewsletterOptional(formData.get('cf-turnstile-response'), 4096);
 
     sourcePage = sourcePageFromForm;
 
@@ -115,9 +99,9 @@ export const POST: APIRoute = async ({ request, redirect }) => {
       return redirectWithStatus('missing-email');
     }
 
-    const email = emailRaw.toLowerCase();
+    const email = normalizeNewsletterEmail(emailRaw);
 
-    if (!EMAIL_REGEX.test(email)) {
+    if (!isValidNewsletterEmail(email)) {
       logStep('invalid_email_format', { email });
       return redirectWithStatus('invalid-email');
     }
@@ -182,90 +166,36 @@ export const POST: APIRoute = async ({ request, redirect }) => {
       return redirectWithStatus('turnstile-failed');
     }
 
-    const newsletterDb = env.DB_JEREMYSAYERS;
-
-    if (!newsletterDb) {
+    if (!env.DB_JEREMYSAYERS) {
       logStep('missing_db_binding');
       return redirectWithStatus('db-error');
     }
 
     try {
-      const tableInfo = await readNewsletterTablePresence(newsletterDb);
-      logStep('db_table_check', {
-        binding: 'DB_JEREMYSAYERS',
-        hasNewsletterSubscribersTable: Boolean(tableInfo?.name),
-        tableName: tableInfo?.name ?? null,
-      });
-    } catch (error) {
-      console.error('[newsletter] table presence check failed', error);
-      return redirectWithStatus('db-error');
-    }
-
-    let existingSubscriber: { id: number } | null = null;
-
-    try {
-      logStep('duplicate_check_start', {
-        binding: 'DB_JEREMYSAYERS',
-        table: 'newsletter_subscribers',
+      const outcome = await submitNewsletterSignup({
+        env,
+        firstName,
+        lastName,
         email,
+        interests,
+        sourcePage,
+        sourceContext,
+        siteUrl: new URL(request.url).origin,
+        remoteIp: request.headers.get('CF-Connecting-IP'),
+        userAgent: request.headers.get('User-Agent')
       });
-      existingSubscriber = await newsletterDb
-        .prepare('SELECT id FROM newsletter_subscribers WHERE email = ?1 LIMIT 1')
-        .bind(email)
-        .first<{ id: number }>();
-      logStep('duplicate_check_complete', {
-        email,
-        foundExistingSubscriber: Boolean(existingSubscriber),
-        existingSubscriberId: existingSubscriber?.id ?? null,
-      });
-    } catch (error) {
-      console.error('[newsletter] duplicate check failed', error);
-      return redirectWithStatus('db-error');
-    }
-
-    if (existingSubscriber) {
-      return redirectWithStatus('duplicate');
-    }
-
-    try {
-      logStep('insert_start', {
-        binding: 'DB_JEREMYSAYERS',
-        table: 'newsletter_subscribers',
-        email,
-        hasLastName: Boolean(lastName),
-        hasInterests: Boolean(interests),
-      });
-      await newsletterDb
-        .prepare(
-          `INSERT INTO newsletter_subscribers (
-            first_name,
-            last_name,
-            email,
-            interests,
-            created_at
-          )
-          VALUES (?1, ?2, ?3, ?4, CURRENT_TIMESTAMP)`
-        )
-        .bind(
-          firstName,
-          lastName,
-          email,
-          interests,
-        )
-        .run();
-      logStep('insert_complete', { email });
-    } catch (error) {
-      console.error('[newsletter] insert failed', error);
-
-      const maybeMessage = error instanceof Error ? error.message : '';
-      if (maybeMessage.toLowerCase().includes('unique')) {
+      logStep('signup_outcome', { email, outcome });
+      if (outcome === 'already_active') {
         return redirectWithStatus('duplicate');
       }
-
+      if (outcome === 'suppressed') {
+        return redirectWithStatus('suppressed');
+      }
+      return redirectWithStatus('success');
+    } catch (error) {
+      console.error('[newsletter] signup persistence failed', error);
       return redirectWithStatus('db-error');
     }
-
-    return redirectWithStatus('success');
   } catch (error) {
     console.error('[newsletter] unexpected handler failure', error);
     return redirectWithStatus('unknown-error');
@@ -273,7 +203,7 @@ export const POST: APIRoute = async ({ request, redirect }) => {
 };
 
 export const ALL: APIRoute = async ({ request, redirect }) => {
-  const sourcePage = resolveRedirectPath(new URL(request.url).searchParams.get('sourcePage'), '/');
+  const sourcePage = resolveNewsletterRedirectPath(new URL(request.url).searchParams.get('sourcePage'), '/');
   const target = appendStatus(sourcePage, 'bad-method');
   console.error('[newsletter] bad method', { method: request.method, target });
   return redirect(target, 303);

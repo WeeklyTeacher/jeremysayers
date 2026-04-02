@@ -535,6 +535,11 @@ h3 {
   font-weight: 700;
 }
 
+.fine-print a {
+  color: var(--navy);
+  font-weight: 700;
+}
+
 .newsletter-form button {
   min-height: 3.2rem;
   background: linear-gradient(135deg, var(--navy), var(--navy-deep));
@@ -632,6 +637,11 @@ h3 {
 .credential-panel__note {
   margin-top: 1rem;
   color: var(--muted);
+}
+
+.action-panel,
+.policy-card {
+  max-width: 56rem;
 }
 
 .project-card__header {

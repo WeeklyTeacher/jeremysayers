@@ -5,6 +5,7 @@
 
 interface ImportMetaEnv {
   readonly PUBLIC_TURNSTILE_SITE_KEY?: string;
+  readonly PUBLIC_GA_MEASUREMENT_ID?: string;
 }
 
 declare namespace App {

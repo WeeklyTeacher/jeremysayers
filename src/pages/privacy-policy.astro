@@ -1,0 +1,108 @@
+---
+// /home/r_/projects/jeremysayers/src/pages/privacy-policy.astro
+import PageIntro from '../components/PageIntro.astro';
+import SectionHeading from '../components/SectionHeading.astro';
+import SiteLayout from '../layouts/SiteLayout.astro';
+---
+
+<SiteLayout
+  title="Privacy Policy | Jeremy Sayers"
+  description="Privacy policy for JeremySayers.com, including newsletter signup, confirmation, unsubscribe, and email delivery practices."
+>
+  <PageIntro
+    title="Privacy Policy"
+    description="This page explains what JeremySayers.com collects, how newsletter signups work, and how email preferences are managed."
+  />
+
+  <section class="section-band section-band--paper">
+    <div class="shell stack">
+      <SectionHeading
+        eyebrow="Overview"
+        title="Privacy and email signup information for JeremySayers.com."
+      />
+      <article class="panel">
+        <p>
+          JeremySayers.com may collect information that visitors provide directly through forms, including newsletter
+          signup details and contact information submitted through the site.
+        </p>
+      </article>
+    </div>
+  </section>
+
+  <section class="section-band section-band--warm">
+    <div class="shell stack">
+      <SectionHeading
+        eyebrow="Newsletter"
+        title="What is collected and how it is used."
+      />
+      <article class="panel policy-card">
+        <p>
+          When you sign up for newsletter updates, the site may collect your email address, first name, last name,
+          interests or comments, source page, confirmation and unsubscribe tokens, signup timestamps, limited device
+          metadata such as user agent, and a hashed form of your IP address.
+        </p>
+        <p>
+          This information is used to manage subscriptions, send confirmation emails, maintain list hygiene, honor
+          unsubscribe requests, and prevent misuse of the signup flow.
+        </p>
+      </article>
+    </div>
+  </section>
+
+  <section class="section-band section-band--paper">
+    <div class="shell stack">
+      <SectionHeading
+        eyebrow="Double Opt-In"
+        title="Newsletter subscriptions use email confirmation."
+      />
+      <article class="panel policy-card">
+        <p>
+          New newsletter signups are stored as pending until the subscriber confirms through an email link. A
+          subscription is not activated until that confirmation step is completed.
+        </p>
+        <p>
+          If a confirmation link expires, the subscriber can request a fresh confirmation email from the site.
+        </p>
+      </article>
+    </div>
+  </section>
+
+  <section class="section-band section-band--slate">
+    <div class="shell stack">
+      <SectionHeading
+        eyebrow="Unsubscribe and Suppression"
+        title="Subscribers can unsubscribe at any time."
+      />
+      <article class="panel policy-card">
+        <p>
+          Every newsletter email is intended to include an unsubscribe link. When someone unsubscribes, the site marks
+          that address accordingly and excludes it from future newsletter sends.
+        </p>
+        <p>
+          The site also maintains suppression and list hygiene states for addresses that should no longer receive
+          messages, including unsubscribed, bounced, and complained recipients.
+        </p>
+      </article>
+    </div>
+  </section>
+
+  <section class="section-band section-band--accent">
+    <div class="shell stack">
+      <SectionHeading
+        eyebrow="Delivery and Logging"
+        title="Service providers and basic operational logs may be used."
+      />
+      <article class="panel policy-card">
+        <p>
+          JeremySayers.com may use third-party email delivery providers to send newsletter confirmation emails and other
+          future updates. The email sending layer is structured to support providers such as Resend and similar
+          services.
+        </p>
+        <p>
+          The site may also keep limited operational logs related to newsletter events such as signup creation,
+          confirmation emails, confirmations, and unsubscribe actions in order to monitor and maintain the system.
+        </p>
+      </article>
+    </div>
+  </section>
+</SiteLayout>

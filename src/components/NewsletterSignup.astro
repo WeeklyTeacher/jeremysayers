@@ -30,8 +30,9 @@ const formAction = new URL('/api/newsletter', Astro.url).pathname;
 const turnstileSiteKey = env.PUBLIC_TURNSTILE_SITE_KEY;
 
 const newsletterMessages = {
-  success: 'Thanks. You are on the list for future updates from Jeremy.',
-  duplicate: 'That email is already subscribed for updates.',
+  success: 'Thanks. Check your email to confirm your subscription.',
+  duplicate: 'That email is already subscribed and confirmed.',
+  suppressed: 'This email address cannot be added automatically. Please contact Jeremy if you need help.',
   'missing-email': 'Please enter your email address.',
   'invalid-email': 'Please enter a valid email address.',
   'missing-first-name': 'Please enter your first name.',
@@ -168,7 +169,7 @@ const isError =
     }
   </form>
   <p class="fine-print">
-    This updates form is intended for community-minded communication about schools, ideas, projects, and future work.
+    By signing up, you agree to receive email updates from Jeremy Sayers. You can unsubscribe at any time. See <a href="/privacy-policy/">Privacy Policy</a>.
   </p>
 </section>
 

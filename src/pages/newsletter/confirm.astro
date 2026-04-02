@@ -1,0 +1,67 @@
+---
+// /home/r_/projects/jeremysayers/src/pages/newsletter/confirm.astro
+import { env } from 'cloudflare:workers';
+import PageIntro from '../../components/PageIntro.astro';
+import SiteLayout from '../../layouts/SiteLayout.astro';
+import { confirmNewsletterSubscription } from '../../lib/newsletter/service';
+
+export const prerender = false;
+
+const token = Astro.url.searchParams.get('token')?.trim() || '';
+const confirmation = token
+  ? await confirmNewsletterSubscription({ env, token })
+  : { outcome: 'invalid' as const };
+
+const resendHref =
+  confirmation.outcome === 'expired' && confirmation.email
+    ? `/newsletter/resend/?email=${encodeURIComponent(confirmation.email)}`
+    : '/newsletter/resend/';
+---
+
+<SiteLayout
+  title="Confirm Subscription | Jeremy Sayers"
+  description="Confirm your Jeremy Sayers newsletter subscription."
+  showSitewideSignup={false}
+  robots="noindex,nofollow"
+>
+  <PageIntro
+    title="Confirm Subscription"
+    description="Complete your newsletter signup to receive future email updates from Jeremy Sayers."
+  />
+
+  <section class="section-band section-band--paper">
+    <div class="shell">
+      <article class="panel action-panel">
+        {
+          confirmation.outcome === 'confirmed' ? (
+            <>
+              <h2>You’re confirmed.</h2>
+              <p>
+                Your email address is now confirmed for future updates from Jeremy Sayers.
+              </p>
+              <p><a class="button button--primary" href="/">Return to the site</a></p>
+            </>
+          ) : confirmation.outcome === 'expired' ? (
+            <>
+              <h2>Your confirmation link has expired.</h2>
+              <p>
+                Confirmation links only stay active for a limited time. You can request a fresh email and finish your
+                signup from there.
+              </p>
+              <p><a class="button button--primary" href={resendHref}>Request a new confirmation email</a></p>
+            </>
+          ) : (
+            <>
+              <h2>This confirmation link is not valid.</h2>
+              <p>
+                The link may have already been used or may no longer be active. You can request a fresh confirmation
+                email below.
+              </p>
+              <p><a class="button button--primary" href={resendHref}>Request a new confirmation email</a></p>
+            </>
+          )
+        }
+      </article>
+    </div>
+  </section>
+</SiteLayout>
