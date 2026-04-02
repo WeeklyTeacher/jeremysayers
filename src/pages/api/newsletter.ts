@@ -33,11 +33,6 @@ type SignupStatus =
   | 'missing-email'
   | 'invalid-email'
   | 'missing-first-name'
-  | 'missing-turnstile-site-key'
-  | 'missing-turnstile-secret'
-  | 'turnstile-missing-field'
-  | 'turnstile-missing-token'
-  | 'turnstile-failed'
   | 'bad-method'
   | 'bad-request'
   | 'db-error'
@@ -52,6 +47,13 @@ const appendStatus = (path: string, status: SignupStatus) => {
 const logStep = (step: string, data?: Record<string, unknown>) => {
   if (!DEBUG) return;
   console.log(`[newsletter] ${step}`, data ?? {});
+};
+
+const readNewsletterTablePresence = async (newsletterDb: D1Database) => {
+  return newsletterDb
+    .prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name = ?1 LIMIT 1")
+    .bind('newsletter_subscribers')
+    .first<{ name: string }>();
 };
 
 export const POST: APIRoute = async ({ request, redirect }) => {
@@ -81,8 +83,6 @@ export const POST: APIRoute = async ({ request, redirect }) => {
     const interests = normalizeOptional(formData.get('interests'), 2000);
     const sourceContext = normalizeOptional(formData.get('sourceContext'), 120);
     const sourcePageFromForm = resolveRedirectPath(normalizeOptional(formData.get('sourcePage'), 200), '/');
-    const turnstileToken = normalizeOptional(formData.get('cf-turnstile-response'), 4096);
-    const hasTurnstileField = formData.has('cf-turnstile-response');
 
     sourcePage = sourcePageFromForm;
 
@@ -93,9 +93,6 @@ export const POST: APIRoute = async ({ request, redirect }) => {
       hasInterests: Boolean(interests),
       sourceContext,
       sourcePage,
-      hasTurnstileField,
-      hasTurnstileToken: Boolean(turnstileToken),
-      turnstileTokenLength: turnstileToken?.length ?? 0,
     });
 
     if (!firstName) {
@@ -115,70 +112,9 @@ export const POST: APIRoute = async ({ request, redirect }) => {
       return redirectWithStatus('invalid-email');
     }
 
-    const turnstileSecret = env.TURNSTILE_SECRET_KEY;
-
     logStep('env_check', {
-      hasTurnstileSecret: Boolean(turnstileSecret),
       hasDbBinding: Boolean(env.DB_JEREMYSAYERS),
     });
-
-    if (hasTurnstileField) {
-      if (!turnstileToken) {
-        logStep('missing_turnstile_token');
-        return redirectWithStatus('turnstile-missing-token');
-      }
-
-      if (!turnstileSecret) {
-        logStep('missing_turnstile_secret');
-        return redirectWithStatus('missing-turnstile-secret');
-      }
-
-      try {
-        const verificationBody = new URLSearchParams({
-          secret: turnstileSecret,
-          response: turnstileToken,
-        });
-
-        const connectingIp = request.headers.get('CF-Connecting-IP');
-        if (connectingIp) {
-          verificationBody.set('remoteip', connectingIp);
-        }
-
-        const verificationResponse = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-          body: verificationBody.toString(),
-        });
-
-        const verificationResult = await verificationResponse.json() as {
-          success?: boolean;
-          'error-codes'?: string[];
-          hostname?: string;
-          action?: string;
-          challenge_ts?: string;
-        };
-
-        logStep('turnstile_verify_result', {
-          httpOk: verificationResponse.ok,
-          httpStatus: verificationResponse.status,
-          success: verificationResult.success,
-          errorCodes: verificationResult['error-codes'],
-          hostname: verificationResult.hostname,
-          action: verificationResult.action,
-          challengeTs: verificationResult.challenge_ts,
-        });
-
-        if (!verificationResponse.ok || !verificationResult.success) {
-          return redirectWithStatus('turnstile-failed');
-        }
-      } catch (error) {
-        console.error('[newsletter] turnstile verification failed', error);
-        return redirectWithStatus('turnstile-failed');
-      }
-    } else {
-      logStep('missing_turnstile_field');
-      return redirectWithStatus('turnstile-missing-field');
-    }
 
     const newsletterDb = env.DB_JEREMYSAYERS;
 
@@ -187,13 +123,35 @@ export const POST: APIRoute = async ({ request, redirect }) => {
       return redirectWithStatus('db-error');
     }
 
+    try {
+      const tableInfo = await readNewsletterTablePresence(newsletterDb);
+      logStep('db_table_check', {
+        binding: 'DB_JEREMYSAYERS',
+        hasNewsletterSubscribersTable: Boolean(tableInfo?.name),
+        tableName: tableInfo?.name ?? null,
+      });
+    } catch (error) {
+      console.error('[newsletter] table presence check failed', error);
+      return redirectWithStatus('db-error');
+    }
+
     let existingSubscriber: { id: number } | null = null;
 
     try {
+      logStep('duplicate_check_start', {
+        binding: 'DB_JEREMYSAYERS',
+        table: 'newsletter_subscribers',
+        email,
+      });
       existingSubscriber = await newsletterDb
         .prepare('SELECT id FROM newsletter_subscribers WHERE email = ?1 LIMIT 1')
         .bind(email)
         .first<{ id: number }>();
+      logStep('duplicate_check_complete', {
+        email,
+        foundExistingSubscriber: Boolean(existingSubscriber),
+        existingSubscriberId: existingSubscriber?.id ?? null,
+      });
     } catch (error) {
       console.error('[newsletter] duplicate check failed', error);
       return redirectWithStatus('db-error');
@@ -204,6 +162,13 @@ export const POST: APIRoute = async ({ request, redirect }) => {
     }
 
     try {
+      logStep('insert_start', {
+        binding: 'DB_JEREMYSAYERS',
+        table: 'newsletter_subscribers',
+        email,
+        hasLastName: Boolean(lastName),
+        hasInterests: Boolean(interests),
+      });
       await newsletterDb
         .prepare(
           `INSERT INTO newsletter_subscribers (
@@ -222,6 +187,7 @@ export const POST: APIRoute = async ({ request, redirect }) => {
           interests,
         )
         .run();
+      logStep('insert_complete', { email });
     } catch (error) {
       console.error('[newsletter] insert failed', error);
 

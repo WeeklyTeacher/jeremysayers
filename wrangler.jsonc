@@ -9,7 +9,6 @@
   },
 
   "vars": {
-    "PUBLIC_TURNSTILE_SITE_KEY": "0x4AAAAAACzHeJme7AQS9WEb",
     "PUBLIC_GA_MEASUREMENT_ID": ""
   },
 

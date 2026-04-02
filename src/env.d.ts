@@ -4,12 +4,5 @@
 /// <reference types="@cloudflare/workers-types" />
 
 declare namespace App {
-  interface Locals {
-    runtime?: {
-      env?: {
-        DB_JEREMYSAYERS?: D1Database;
-        TURNSTILE_SECRET_KEY?: string;
-      };
-    };
-  }
+  interface Locals {}
 }

@@ -17,9 +17,6 @@ const {
   eyebrow = 'Stay Connected'
 } = Astro.props;
 
-// PUBLIC_TURNSTILE_SITE_KEY must be available when Astro builds so the widget markup renders.
-const turnstileSiteKey = import.meta.env.PUBLIC_TURNSTILE_SITE_KEY;
-const enableClientDebug = import.meta.env.DEV;
 const status = Astro.url.searchParams.get('newsletter');
 const formAction = new URL('/api/newsletter', Astro.url).pathname;
 
@@ -29,11 +26,6 @@ const newsletterMessages = {
   'missing-email': 'Please enter your email address.',
   'invalid-email': 'Please enter a valid email address.',
   'missing-first-name': 'Please enter your first name.',
-  'missing-turnstile-site-key': 'Spam protection is not configured yet.',
-  'missing-turnstile-secret': 'The newsletter service is not fully configured yet.',
-  'turnstile-missing-field': 'Spam protection could not attach to the form.',
-  'turnstile-missing-token': 'Please complete the spam protection check.',
-  'turnstile-failed': 'Spam protection verification failed. Please try again.',
   'bad-method': 'This signup request used the wrong method.',
   'bad-request': 'The signup request could not be processed.',
   'db-error': 'The newsletter service is temporarily unavailable. Please try again.',
@@ -60,8 +52,6 @@ const isError =
     class={`newsletter-form ${compact ? 'newsletter-form--compact' : ''}`}
     action={formAction}
     method="POST"
-    data-newsletter-form
-    data-debug-submit={enableClientDebug ? 'true' : 'false'}
   >
     <div class="newsletter-form__row">
       <label>
@@ -85,24 +75,6 @@ const isError =
     <input type="hidden" name="sourceContext" value={sourceContext} />
     <input type="hidden" name="sourcePage" value={Astro.url.pathname} />
 
-    {
-      turnstileSiteKey && (
-        <div class="newsletter-form__turnstile">
-          <input type="hidden" name="cf-turnstile-response" value="" data-turnstile-response />
-          <div
-            class="cf-turnstile"
-            data-sitekey={turnstileSiteKey}
-            data-theme="light"
-            data-appearance="interaction-only"
-            data-size="flexible"
-            data-callback="onNewsletterTurnstileSuccess"
-            data-expired-callback="onNewsletterTurnstileExpired"
-            data-error-callback="onNewsletterTurnstileExpired"
-          ></div>
-        </div>
-      )
-    }
-
     <button type="submit">Join the Community</button>
     {
       isKnownStatus && (
@@ -116,53 +88,3 @@ const isError =
     This updates form is intended for community-minded communication about schools, ideas, projects, and future work.
   </p>
 </section>
-
-{turnstileSiteKey && <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>}
-<script is:inline>
-  const syncNewsletterTurnstileToken = (form, token = '') => {
-    const tokenInput = form?.querySelector('[data-turnstile-response]');
-    if (tokenInput instanceof HTMLInputElement) {
-      tokenInput.value = token;
-    }
-  };
-
-  window.onNewsletterTurnstileSuccess = (token) => {
-    document.querySelectorAll('[data-newsletter-form]').forEach((form) => {
-      syncNewsletterTurnstileToken(form, token);
-    });
-  };
-
-  window.onNewsletterTurnstileExpired = () => {
-    document.querySelectorAll('[data-newsletter-form]').forEach((form) => {
-      syncNewsletterTurnstileToken(form, '');
-    });
-  };
-
-  document.querySelectorAll('[data-newsletter-form]').forEach((form) => {
-    if (form.dataset.turnstileBound === 'true') return;
-    form.dataset.turnstileBound = 'true';
-
-    form.addEventListener('submit', () => {
-      const injectedTurnstileInput = form.querySelector(
-        'input[name="cf-turnstile-response"]:not([data-turnstile-response])'
-      );
-      const hiddenTurnstileInput = form.querySelector('[data-turnstile-response]');
-
-      if (
-        injectedTurnstileInput instanceof HTMLInputElement &&
-        hiddenTurnstileInput instanceof HTMLInputElement &&
-        !hiddenTurnstileInput.value
-      ) {
-        hiddenTurnstileInput.value = injectedTurnstileInput.value;
-      }
-
-      if (form.dataset.debugSubmit === 'true') {
-        const formData = new FormData(form);
-        console.log(
-          '[newsletter-form] submit payload',
-          Object.fromEntries(formData.entries())
-        );
-      }
-    });
-  });
-</script>
