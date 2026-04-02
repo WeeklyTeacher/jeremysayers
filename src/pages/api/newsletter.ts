@@ -46,6 +46,7 @@ type SignupStatus =
   | 'missing-first-name'
   | 'missing-turnstile-site-key'
   | 'missing-turnstile-secret'
+  | 'turnstile-missing-field'
   | 'turnstile-missing-token'
   | 'turnstile-failed'
   | 'bad-method'
@@ -197,7 +198,7 @@ export const POST: APIRoute = async ({ request, redirect }) => {
       }
     } else {
       logStep('missing_turnstile_field');
-      return redirectWithStatus('turnstile-missing-token');
+      return redirectWithStatus('turnstile-missing-field');
     }
 
     const newsletterDb = env.DB_JEREMYSAYERS;

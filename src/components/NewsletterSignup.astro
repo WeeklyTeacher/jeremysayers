@@ -29,6 +29,7 @@ const newsletterMessages = {
   'missing-first-name': 'Please enter your first name.',
   'missing-turnstile-site-key': 'Spam protection is not configured yet.',
   'missing-turnstile-secret': 'The newsletter service is not fully configured yet.',
+  'turnstile-missing-field': 'Spam protection could not attach to the form.',
   'turnstile-missing-token': 'Please complete the spam protection check.',
   'turnstile-failed': 'Spam protection verification failed. Please try again.',
   'bad-method': 'This signup request used the wrong method.',
@@ -122,8 +123,25 @@ const isError =
     if (window.__jeremyNewsletterTurnstileInit) return;
     window.__jeremyNewsletterTurnstileInit = true;
 
+    window.__jeremyGetNewsletterTurnstileInput = (form) => {
+      if (!(form instanceof HTMLFormElement)) return null;
+
+      let tokenInput = form.querySelector('[data-turnstile-response]');
+      if (tokenInput instanceof HTMLInputElement) {
+        return tokenInput;
+      }
+
+      tokenInput = document.createElement('input');
+      tokenInput.type = 'hidden';
+      tokenInput.name = 'cf-turnstile-response';
+      tokenInput.value = '';
+      tokenInput.setAttribute('data-turnstile-response', '');
+      form.appendChild(tokenInput);
+      return tokenInput;
+    };
+
     window.__jeremySyncNewsletterTurnstileToken = (form, token = '') => {
-      const tokenInput = form?.querySelector('[data-turnstile-response]');
+      const tokenInput = window.__jeremyGetNewsletterTurnstileInput(form);
       console.log('[newsletter-form] hidden input found', {
         found: tokenInput instanceof HTMLInputElement,
       });
@@ -172,11 +190,12 @@ const isError =
     document.addEventListener('submit', (event) => {
       const form = event.target;
       if (!(form instanceof HTMLFormElement) || !form.matches('[data-newsletter-form]')) return;
+      console.log('[newsletter-form] submit attempted');
 
       const injectedTurnstileInput = form.querySelector(
         'input[name="cf-turnstile-response"]:not([data-turnstile-response])'
       );
-      const hiddenTurnstileInput = form.querySelector('[data-turnstile-response]');
+      const hiddenTurnstileInput = window.__jeremyGetNewsletterTurnstileInput(form);
       const turnstileWidget = form.querySelector('[data-turnstile-widget]');
 
       if (
@@ -221,5 +240,11 @@ const isError =
       script.dataset.jeremyTurnstileScript = 'true';
       document.head.appendChild(script);
     }
+
+    document.querySelectorAll('[data-newsletter-form]').forEach((form) => {
+      if (form instanceof HTMLFormElement) {
+        window.__jeremyGetNewsletterTurnstileInput(form);
+      }
+    });
   })();
 </script>
