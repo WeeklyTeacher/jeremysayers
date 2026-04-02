@@ -21,6 +21,17 @@ const normalizeRequired = (value: FormDataEntryValue | null, maxLength: number) 
   return trimmed.slice(0, maxLength);
 };
 
+const normalizeFirstNonEmpty = (values: FormDataEntryValue[], maxLength: number) => {
+  for (const value of values) {
+    if (typeof value !== 'string') continue;
+    const trimmed = value.trim();
+    if (!trimmed) continue;
+    return trimmed.slice(0, maxLength);
+  }
+
+  return null;
+};
+
 const resolveRedirectPath = (candidate: string | null, fallback = '/') => {
   if (!candidate || typeof candidate !== 'string') return fallback;
   if (!candidate.startsWith('/')) return fallback;
@@ -80,7 +91,10 @@ export const POST: APIRoute = async ({ request, redirect }) => {
     const interests = normalizeOptional(formData.get('interests'), 2000);
     const sourceContext = normalizeOptional(formData.get('sourceContext'), 120);
     const sourcePageFromForm = resolveRedirectPath(normalizeOptional(formData.get('sourcePage'), 200), '/');
-    const turnstileToken = normalizeOptional(formData.get('cf-turnstile-response'), 4096);
+    const turnstileToken = normalizeFirstNonEmpty(
+      formData.getAll('cf-turnstile-response'),
+      4096
+    );
     const hasTurnstileField = formData.has('cf-turnstile-response');
 
     sourcePage = sourcePageFromForm;
