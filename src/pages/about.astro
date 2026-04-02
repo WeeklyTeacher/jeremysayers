@@ -3,7 +3,7 @@
 import PageIntro from '../components/PageIntro.astro';
 import SectionHeading from '../components/SectionHeading.astro';
 import SiteLayout from '../layouts/SiteLayout.astro';
-import { aboutTimeline, site } from '../data/site';
+import { site } from '../data/site';
 
 const structuredData = {
   '@context': 'https://schema.org',
@@ -16,43 +16,31 @@ const structuredData = {
 ---
 
 <SiteLayout
-  title="About Jeremy Sayers | Educator, Builder, Writer, and Community-Minded Leader"
-  description="Learn about Jeremy Sayers’s background in education, leadership, project building, and public-interest work in Torrance, California."
+  title="About Jeremy Sayers | Educator, Builder, and Community-Minded Leader"
+  description="Learn about Jeremy Sayers’s background in teaching, school leadership, practical project building, and community-minded work in Torrance, California."
   structuredData={structuredData}
 >
   <PageIntro
-    title="About Jeremy"
-    description="Jeremy Sayers brings together classroom experience, school leadership, practical project-building, and a long-term interest in constructive community life in Torrance."
+    title="About Jeremy Sayers"
+    description="I’m an award-winning educator, builder, and Torrance resident whose work has been shaped by classrooms, practical problem-solving, and a real interest in community life."
   />
 
-  <section>
+  <section class="section-band section-band--paper">
     <div class="shell about-grid">
-      <div class="stack">
+      <div class="stack about-intro">
         <SectionHeading
-          eyebrow="Background"
-          title="An educator-builder profile shaped by direct experience, not abstraction."
-          text="This page is intentionally human and search-friendly at the same time: it explains Jeremy’s work clearly while giving readers a fuller sense of his values and direction."
+          eyebrow="Introduction"
+          title="My work has grown out of classrooms, school leadership, and building useful things."
         />
         <p>
-          Jeremy is an award-winning educator whose professional life has been built in classrooms, school leadership,
-          and practical efforts to expand student opportunity. He has taught every elementary grade from kindergarten
-          through fifth, an experience that gives him perspective on academic growth, developmental readiness, and the
-          systems that help students thrive over time.
+          I’ve spent years teaching, building programs, and creating practical projects. In 2023, I was honored to be
+          named LAUSD Teacher of the Year, and that recognition meant a lot because it came from the real work of
+          serving students and families well.
         </p>
         <p>
-          He also served as a Magnet Coordinator, where his work expanded beyond one classroom into broader questions of
-          program quality, family communication, school identity, and access to strong educational opportunities. That
-          leadership period helped sharpen a style rooted in collaboration, implementation, and useful follow-through.
-        </p>
-        <p>
-          Jeremy’s work extends beyond school walls through websites and learning-focused projects that turn ideas into
-          usable resources. He is interested in STEM, robotics, innovation, educational opportunity, and stronger
-          pathways for students and families.
-        </p>
-        <p>
-          Based in Torrance, California, he is also building a thoughtful public-facing platform for community-minded
-          reflection, practical school ideas, and future public-interest work. The tone of that work is deliberate:
-          credible, substantial, grounded, and not performative.
+          I’ve taught every elementary grade from kindergarten through fifth, and that gives me a broad view of how
+          children grow, where families need support, and how much clear systems and strong relationships matter over
+          time. This site is where I share that work, the ideas behind it, and the projects I’m building.
         </p>
       </div>
 
@@ -60,37 +48,101 @@ const structuredData = {
         <article class="pullquote-card">
           <h3>Guiding idea</h3>
           <p>
-            Excellent education expands possibility. The goal is not only strong teaching in the moment, but better
-            opportunities, stronger systems, and clearer pathways over time.
+            I believe good schools expand possibility. The work is not just about one classroom on one day. It is about
+            building stronger opportunities and better outcomes over time.
           </p>
         </article>
         <article class="panel">
           <p class="eyebrow">Recognition</p>
-          <h3>Teacher of the Year</h3>
+          <h3>LAUSD Teacher of the Year, 2023</h3>
           <p>
-            Jeremy was recognized as LAUSD Teacher of the Year in 2023, a distinction that reflects the substance of
-            his classroom practice and broader educational impact.
+            My work has been recognized for classroom excellence and for the broader leadership, communication, and
+            follow-through that strong schools require.
           </p>
         </article>
       </aside>
     </div>
   </section>
 
-  <section>
+  <section class="section-band section-band--warm">
     <div class="shell">
       <SectionHeading
-        eyebrow="Professional Arc"
-        title="A path that moves from teaching to leadership to a broader civic and editorial voice."
+        eyebrow="How I Got Here"
+        title="Teaching across K-5 shaped how I think about students, families, and schools."
       />
-      <div class="timeline">
-        {aboutTimeline.map((item) => (
-          <article class="timeline-card">
-            <span class="timeline-card__period">{item.period}</span>
-            <h3>{item.title}</h3>
-            <p>{item.text}</p>
-          </article>
-        ))}
+      <div class="about-story-grid">
+        <article class="panel">
+          <h3>Classroom experience</h3>
+          <p>
+            Teaching every elementary grade gave me a practical view of learning, development, and the transitions that
+            matter most. It also taught me that strong schools depend on trust, consistency, and communication with
+            families.
+          </p>
+        </article>
+        <article class="panel">
+          <h3>What that taught me</h3>
+          <p>
+            The classroom keeps your perspective honest. It shows what actually helps students, what creates friction,
+            and how important it is for opportunity to feel real, not theoretical.
+          </p>
+        </article>
       </div>
+    </div>
+  </section>
+
+  <section class="section-band section-band--paper">
+    <div class="shell">
+      <SectionHeading
+        eyebrow="Leadership and Program Building"
+        title="Serving as Magnet Coordinator widened my lens from one classroom to the whole school community."
+      />
+      <p class="about-section-lead">
+        As Magnet Coordinator, I spent more time thinking about program identity, family communication, student
+        recruitment, and the systems that help a school feel strong and coherent. That work deepened my interest in
+        how schools connect with the community around them.
+      </p>
+    </div>
+  </section>
+
+  <section class="section-band section-band--slate">
+    <div class="shell">
+      <SectionHeading
+        eyebrow="Builder Mentality"
+        title="I also like building practical sites and projects that solve real problems."
+      />
+      <p class="about-section-lead">
+        I’ve created projects including EdThings.com, NoMoreBills.com, and MathAndEnglishWorksheets.com because I enjoy
+        turning ideas into tools people can actually use. That builder mentality is a big part of how I approach both
+        education and problem-solving more broadly.
+      </p>
+    </div>
+  </section>
+
+  <section class="section-band section-band--accent">
+    <div class="shell">
+      <SectionHeading
+        eyebrow="What I Care About"
+        title="The through-line is applied learning, stronger schools, and constructive community life."
+      />
+      <p class="about-section-lead">
+        I care about STEM, robotics, hands-on learning, innovation that actually helps people, and stronger
+        school-community partnership. I’m also shaped by a longstanding interest in history, local community life, and
+        the kind of public service that is steady, thoughtful, and useful.
+      </p>
+    </div>
+  </section>
+
+  <section class="section-band section-band--paper">
+    <div class="shell">
+      <SectionHeading
+        eyebrow="Why This Site Exists"
+        title="This site gives me one place to share updates, ideas, and future work."
+      />
+      <p class="about-section-lead">
+        It’s a place to share education ideas, practical projects, local observations, and community-minded work in a
+        voice that feels honest to me. If you follow along, you can expect thoughtful updates rather than constant
+        noise.
+      </p>
     </div>
   </section>
 </SiteLayout>

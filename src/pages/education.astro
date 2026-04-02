@@ -1,64 +1,146 @@
----
+--- 
 // /home/r_/projects/jeremysayers/src/pages/education.astro
+import NewsletterSignup from '../components/NewsletterSignup.astro';
 import PageIntro from '../components/PageIntro.astro';
 import SectionHeading from '../components/SectionHeading.astro';
 import SiteLayout from '../layouts/SiteLayout.astro';
-import { educationPillars } from '../data/site';
 ---
 
 <SiteLayout
-  title="Education | Jeremy Sayers"
-  description="Jeremy Sayers on teaching experience, student opportunity, STEM, robotics, innovation, and leadership in education."
+  title="Education & Community | Jeremy Sayers"
+  description="Jeremy Sayers on teaching, school leadership, family partnership, STEM, robotics, and the school-community connections that help students thrive."
+  showSitewideSignup={false}
 >
   <PageIntro
-    title="Education"
-    description="Jeremy’s work in education combines classroom depth, leadership experience, innovation-minded thinking, and a practical belief that opportunity should feel real for students."
+    title="Education & Community"
+    description="Jeremy Sayers brings together classroom experience, educational leadership, STEM advocacy, and a strong belief that schools are strongest when educators and families work together."
   />
 
-  <section>
+  <section class="section-band section-band--paper">
     <div class="shell education-grid">
       <div class="stack">
         <SectionHeading
           eyebrow="Teaching and Leadership"
-          title="Grounded in classrooms, expanded through broader educational leadership."
-          text="Jeremy’s perspective is shaped by direct teaching, Magnet Coordinator leadership, and an interest in better systems for students and families."
+          title="Classroom experience, leadership, and a practical commitment to student opportunity."
         />
         <p>
-          Teaching every elementary grade from kindergarten through fifth creates a clearer view of how students learn,
-          where they struggle, and what stronger support actually looks like. That kind of continuity matters because
-          it keeps educational decisions anchored in real developmental experience.
+          Jeremy’s work in education is shaped by years of experience teaching elementary students across grade levels
+          kindergarten through fifth grade. That range brings a broader understanding of how students grow, where they
+          need support, and what meaningful learning looks like at different stages.
         </p>
         <p>
-          Jeremy’s work also reflects ongoing interest in STEM, robotics, innovation, and applied learning. The aim is
-          not to chase trends, but to create experiences that help students become more capable, more curious, and more
-          confident as thinkers and builders.
+          His approach to education is practical and student-centered. Strong instruction, high expectations, and real
+          opportunities matter. The goal is not only academic growth, but helping students build confidence, curiosity,
+          and a sense of possibility about what they can do.
         </p>
       </div>
-      <aside class="panel panel--navy">
-        <p class="eyebrow">Education Philosophy</p>
-        <h3>Good schools widen the horizon for students and families.</h3>
-        <p>
-          Strong instruction, clear systems, high expectations, and meaningful access to opportunity are not extras.
-          They are the foundation.
-        </p>
+      <aside class="pullquote-card">
+        <h3>Strong schools are built through teaching, trust, and meaningful partnership with families.</h3>
       </aside>
     </div>
   </section>
 
-  <section>
+  <section class="section-band section-band--paper">
     <div class="shell">
       <SectionHeading
-        eyebrow="Focus Areas"
-        title="A practical education agenda without slogans."
+        eyebrow="Family Partnership"
+        title="The best educational environments are partnerships with families."
       />
-      <div class="signal-grid">
-        {educationPillars.map((item) => (
-          <article class="signal-card">
-            <h3>{item.title}</h3>
-            <p>{item.text}</p>
-          </article>
-        ))}
+      <p class="education-community__lead">
+        Lasting school success does not come from educators working alone. It grows when schools and families build
+        trust, communicate clearly, and participate together in the life of the school.
+      </p>
+      <p class="education-community__lead">
+        Jeremy believes family partnership should be treated as an essential part of student success. When families are
+        welcomed into meaningful roles, school communities become stronger, more connected, and better able to support
+        children.
+      </p>
+    </div>
+  </section>
+
+  <section class="section-band section-band--slate">
+    <div class="shell">
+      <SectionHeading
+        eyebrow="STEM and Hands-On Learning"
+        title="Students need opportunities to build, create, problem-solve, and discover what they can do."
+      />
+      <div class="about-story-grid">
+        <article class="panel">
+          <p>
+            Jeremy has a strong interest in STEM, robotics, innovation, and applied learning. Hands-on experiences can
+            change how students see themselves and help them develop persistence, teamwork, and confidence.
+          </p>
+        </article>
+        <article class="panel">
+          <p>
+            Robotics, engineering, making, and creative problem-solving give students real opportunities to test ideas,
+            recover from setbacks, and discover strengths they may not have seen in themselves before. VEX Robotics and
+            related programs also show the value of parent involvement, encouragement, and shared investment in student
+            growth.
+          </p>
+        </article>
       </div>
+    </div>
+  </section>
+
+  <section class="section-band section-band--accent">
+    <div class="shell">
+      <SectionHeading
+        eyebrow="Community Involvement"
+        title="School communities grow stronger when people show up, participate, and contribute."
+      />
+      <p class="education-community__lead">
+        A healthy school community is built through steady involvement. Events, committees, arts programs, and school
+        activities all help create the trust and shared responsibility that students benefit from most.
+      </p>
+      <p class="education-community__lead">
+        That belief is reflected in Jeremy’s own family life as well. Parents have been very involved in VEX
+        Robotics, and Mrs. Sayers has been actively involved in Adventures in Art, school events, and school
+        committees. It reflects a larger belief that schools are stronger when families, educators, and community
+        members all have a real place in the work.
+      </p>
+    </div>
+  </section>
+
+  <section class="section-band section-band--warm">
+    <div class="shell">
+      <SectionHeading
+        eyebrow="Education and Credentials"
+        title="A concise view of Jeremy’s academic and professional background."
+      />
+      <article class="panel credential-panel">
+        <ul class="credential-list">
+          <li>El Camino College — A.A. History, A.S. Computer Information Systems</li>
+          <li>UC San Diego — B.A. History</li>
+          <li>National University — Master’s in Education, Teaching Credential</li>
+          <li>USC — Administrative Credential</li>
+        </ul>
+        <p class="credential-panel__note">
+          This background reflects Jeremy’s long-standing interest in learning, leadership, technology, and the
+          systems that help schools serve students and families well.
+        </p>
+      </article>
+    </div>
+  </section>
+
+  <section class="section-band section-band--paper">
+    <div class="shell stay-grid">
+      <div class="stack">
+        <SectionHeading
+          eyebrow="Stay Connected"
+          title="Get updates on education, school-community ideas, and practical work."
+          text="If you want to follow Jeremy’s education work, projects, and future updates, this is the best place to stay in touch."
+        />
+        <p>
+          The updates list is designed for occasional, useful communication about schools, hands-on learning, family
+          partnership, and community-minded work.
+        </p>
+      </div>
+      <NewsletterSignup
+        title="Stay Connected"
+        text="Join for occasional updates on education, family partnership, STEM, robotics, and practical projects."
+        sourceContext="education-community-page"
+      />
     </div>
   </section>
 </SiteLayout>

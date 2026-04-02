@@ -42,9 +42,12 @@ type SignupStatus =
   | 'db-error'
   | 'unknown-error';
 
-const appendStatus = (path: string, status: SignupStatus) => {
+const appendStatus = (path: string, status: SignupStatus, sourceContext?: string | null) => {
   const url = new URL(path, 'http://localhost');
   url.searchParams.set('newsletter', status);
+  if (sourceContext) {
+    url.searchParams.set('newsletterSource', sourceContext);
+  }
   return `${url.pathname}${url.search}`;
 };
 
@@ -62,9 +65,10 @@ const readNewsletterTablePresence = async (newsletterDb: D1Database) => {
 
 export const POST: APIRoute = async ({ request, redirect }) => {
   let sourcePage = '/';
+  let sourceContext: string | null = null;
 
   const redirectWithStatus = (status: SignupStatus) => {
-    const target = appendStatus(sourcePage, status);
+    const target = appendStatus(sourcePage, status, sourceContext);
     console.log('[newsletter] redirecting', { status, target });
     return redirect(target, 303);
   };
@@ -85,7 +89,7 @@ export const POST: APIRoute = async ({ request, redirect }) => {
     const lastName = normalizeOptional(formData.get('lastName'), 120);
     const emailRaw = normalizeRequired(formData.get('email'), 254);
     const interests = normalizeOptional(formData.get('interests'), 2000);
-    const sourceContext = normalizeOptional(formData.get('sourceContext'), 120);
+    sourceContext = normalizeOptional(formData.get('sourceContext'), 120);
     const sourcePageFromForm = resolveRedirectPath(normalizeOptional(formData.get('sourcePage'), 200), '/');
     const turnstileToken = normalizeOptional(formData.get('cf-turnstile-response'), 4096);
 

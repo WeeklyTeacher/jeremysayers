@@ -209,11 +209,11 @@ h3 {
 }
 
 h1 {
-  font-size: clamp(3.2rem, 4.5vw, 3.9rem);
+  font-size: clamp(2.4rem, 3.4vw, 3rem);
 }
 
 h2 {
-  font-size: clamp(2.1rem, 4.5vw, 3.8rem);
+  font-size: clamp(1.6rem, 3.3vw, 2.85rem);
 }
 
 h3 {
@@ -469,6 +469,11 @@ h3 {
   padding: 1.7rem;
 }
 
+.signup-card__copy {
+  display: grid;
+  gap: 0.7rem;
+}
+
 .newsletter-form {
   display: grid;
   gap: 0.9rem;
@@ -520,6 +525,16 @@ h3 {
   color: var(--red);
 }
 
+.newsletter-form__linkline {
+  font-size: 0.92rem;
+  color: var(--muted);
+}
+
+.newsletter-form__linkline a {
+  color: var(--navy);
+  font-weight: 700;
+}
+
 .newsletter-form button {
   min-height: 3.2rem;
   background: linear-gradient(135deg, var(--navy), var(--navy-deep));
@@ -542,8 +557,81 @@ h3 {
   color: var(--red);
 }
 
-.signup-card--compact .newsletter-form__row {
-  grid-template-columns: 1fr;
+.sitewide-signup {
+  padding: 0 0 1rem;
+}
+
+.sitewide-signup .shell {
+  position: relative;
+}
+
+.signup-card--compact {
+  display: grid;
+  gap: 1rem;
+  align-items: center;
+  padding: 1.35rem 1.45rem;
+}
+
+.signup-card--compact .signup-card__copy {
+  max-width: 36rem;
+}
+
+.newsletter-form--compact {
+  gap: 0.7rem;
+}
+
+.newsletter-form__row--compact {
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.15fr) auto;
+  align-items: center;
+}
+
+.newsletter-form--compact .newsletter-form__turnstile {
+  max-width: 22rem;
+}
+
+.newsletter-form--compact button {
+  min-width: 9rem;
+  padding-inline: 1.2rem;
+}
+
+.about-intro {
+  max-width: 44rem;
+}
+
+.about-story-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.5rem;
+}
+
+.about-section-lead {
+  max-width: 54rem;
+  color: var(--muted);
+}
+
+.credential-list {
+  display: grid;
+  gap: 0.55rem;
+  padding-left: 1.2rem;
+  margin-top: 1rem;
+}
+
+.education-community__lead {
+  max-width: 56rem;
+  color: var(--muted);
+}
+
+.credential-panel {
+  max-width: 54rem;
+}
+
+.credential-panel .credential-list {
+  margin-top: 0;
+}
+
+.credential-panel__note {
+  margin-top: 1rem;
+  color: var(--muted);
 }
 
 .project-card__header {
@@ -756,6 +844,19 @@ h3 {
 
   .site-footer__columns {
     grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .signup-card--compact,
+  .about-story-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .newsletter-form__row--compact {
+    grid-template-columns: 1fr;
+  }
+
+  .newsletter-form--compact .newsletter-form__turnstile {
+    max-width: none;
   }
 }
 

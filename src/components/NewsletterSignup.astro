@@ -8,6 +8,9 @@ interface Props {
   sourceContext?: string;
   compact?: boolean;
   eyebrow?: string;
+  buttonLabel?: string;
+  linkHref?: string;
+  linkText?: string;
 }
 
 const {
@@ -15,10 +18,14 @@ const {
   text = 'Get updates on education leadership, STEM, robotics, community partnership, and practical school innovation.',
   sourceContext = 'site',
   compact = false,
-  eyebrow = 'Stay Connected'
+  eyebrow = 'Stay Connected',
+  buttonLabel = compact ? 'Sign Up' : 'Join the Community',
+  linkHref = '/stay-connected/',
+  linkText = 'Want to share more? Visit the full updates form.'
 } = Astro.props;
 
 const status = Astro.url.searchParams.get('newsletter');
+const statusSource = Astro.url.searchParams.get('newsletterSource');
 const formAction = new URL('/api/newsletter', Astro.url).pathname;
 const turnstileSiteKey = env.PUBLIC_TURNSTILE_SITE_KEY;
 
@@ -40,9 +47,10 @@ const newsletterMessages = {
 
 type NewsletterState = keyof typeof newsletterMessages;
 
-const isKnownStatus = status && status in newsletterMessages;
+const statusMatchesSource = !statusSource || statusSource === sourceContext;
+const isKnownStatus = status && statusMatchesSource && status in newsletterMessages;
 const isError =
-  status &&
+  isKnownStatus &&
   status !== 'success' &&
   status !== 'duplicate' &&
   status in newsletterMessages;
@@ -59,24 +67,75 @@ const isError =
     action={formAction}
     method="POST"
   >
-    <div class="newsletter-form__row">
-      <label>
-        <span class="sr-only">First Name</span>
-        <input type="text" name="firstName" placeholder="First Name" autocomplete="given-name" required />
-      </label>
-      <label>
-        <span class="sr-only">Last Name</span>
-        <input type="text" name="lastName" placeholder="Last Name" autocomplete="family-name" />
-      </label>
-    </div>
-    <label>
-      <span class="sr-only">Email Address</span>
-      <input type="email" name="email" placeholder="Email Address" autocomplete="email" required />
-    </label>
-    <label>
-      <span class="sr-only">Interests or Comments</span>
-      <textarea name="interests" rows="4" placeholder="Interests or Comments"></textarea>
-    </label>
+    {
+      compact ? (
+        <div class="newsletter-form__row newsletter-form__row--compact">
+          <label>
+            <span class="sr-only">First Name</span>
+            <input
+              type="text"
+              name="firstName"
+              placeholder="First Name"
+              autocomplete="given-name"
+              required
+            />
+          </label>
+          <label>
+            <span class="sr-only">Email Address</span>
+            <input
+              type="email"
+              name="email"
+              placeholder="Email Address"
+              autocomplete="email"
+              required
+            />
+          </label>
+          <button type="submit">{buttonLabel}</button>
+        </div>
+      ) : (
+        <>
+          <div class="newsletter-form__row">
+            <label>
+              <span class="sr-only">First Name</span>
+              <input
+                type="text"
+                name="firstName"
+                placeholder="First Name"
+                autocomplete="given-name"
+                required
+              />
+            </label>
+            <label>
+              <span class="sr-only">Last Name</span>
+              <input
+                type="text"
+                name="lastName"
+                placeholder="Last Name"
+                autocomplete="family-name"
+              />
+            </label>
+          </div>
+          <label>
+            <span class="sr-only">Email Address</span>
+            <input
+              type="email"
+              name="email"
+              placeholder="Email Address"
+              autocomplete="email"
+              required
+            />
+          </label>
+          <label>
+            <span class="sr-only">Interests or Comments</span>
+            <textarea
+              name="interests"
+              rows="4"
+              placeholder="Interests or Comments"
+            ></textarea>
+          </label>
+        </>
+      )
+    }
 
     <input type="hidden" name="sourceContext" value={sourceContext} />
     <input type="hidden" name="sourcePage" value={Astro.url.pathname} />
@@ -92,7 +151,14 @@ const isError =
       <p class="newsletter-form__turnstile-message" data-turnstile-message aria-live="polite"></p>
     </div>
 
-    <button type="submit">Join the Community</button>
+    {
+      compact && (
+        <p class="newsletter-form__linkline">
+          <a href={linkHref}>{linkText}</a>
+        </p>
+      )
+    }
+    {!compact && <button type="submit">{buttonLabel}</button>}
     {
       isKnownStatus && (
         <p class:list={['newsletter-form__status', isError && 'newsletter-form__status--error']} role={isError ? 'alert' : 'status'}>

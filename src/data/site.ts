@@ -15,8 +15,7 @@ export const site = {
 export const navLinks = [
   { href: '/', label: 'Home' },
   { href: '/about/', label: 'About' },
-  { href: '/education/', label: 'Education' },
-  { href: '/community/', label: 'Community' },
+  { href: '/education/', label: 'Education & Community' },
   { href: '/projects/', label: 'Projects' },
   { href: '/stay-connected/', label: 'Stay Connected' },
   { href: '/contact/', label: 'Contact' }
