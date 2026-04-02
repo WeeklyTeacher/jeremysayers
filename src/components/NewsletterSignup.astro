@@ -1,5 +1,6 @@
 ---
 // /home/r_/projects/jeremysayers/src/components/NewsletterSignup.astro
+import { env } from 'cloudflare:workers';
 
 interface Props {
   title?: string;
@@ -19,7 +20,7 @@ const {
 
 const status = Astro.url.searchParams.get('newsletter');
 const formAction = new URL('/api/newsletter', Astro.url).pathname;
-const turnstileSiteKey = import.meta.env.PUBLIC_TURNSTILE_SITE_KEY;
+const turnstileSiteKey = env.PUBLIC_TURNSTILE_SITE_KEY;
 
 const newsletterMessages = {
   success: 'Thanks. You are on the list for future updates from Jeremy.',
@@ -80,20 +81,14 @@ const isError =
     <input type="hidden" name="sourceContext" value={sourceContext} />
     <input type="hidden" name="sourcePage" value={Astro.url.pathname} />
     <div class="newsletter-form__turnstile">
-      {
-        turnstileSiteKey ? (
-          <div
-            class="cf-turnstile"
-            data-sitekey={turnstileSiteKey}
-            data-theme="light"
-            data-size="flexible"
-          ></div>
-        ) : (
-          <p class="newsletter-form__turnstile-message newsletter-form__turnstile-message--error" role="alert">
-            Verification is temporarily unavailable. Please try again soon.
-          </p>
-        )
-      }
+      {turnstileSiteKey && (
+        <div
+          class="cf-turnstile"
+          data-sitekey={turnstileSiteKey}
+          data-theme="light"
+          data-size="flexible"
+        ></div>
+      )}
       <p class="newsletter-form__turnstile-message" data-turnstile-message aria-live="polite"></p>
     </div>
 
