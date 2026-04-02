@@ -117,7 +117,6 @@ const isError =
   </p>
 </section>
 
-{turnstileSiteKey && <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>}
 <script is:inline>
   (() => {
     if (window.__jeremyNewsletterTurnstileInit) return;
@@ -125,8 +124,14 @@ const isError =
 
     window.__jeremySyncNewsletterTurnstileToken = (form, token = '') => {
       const tokenInput = form?.querySelector('[data-turnstile-response]');
+      console.log('[newsletter-form] hidden input found', {
+        found: tokenInput instanceof HTMLInputElement,
+      });
       if (tokenInput instanceof HTMLInputElement) {
         tokenInput.value = token;
+        console.log('[newsletter-form] token length written', {
+          length: token.length,
+        });
       }
     };
 
@@ -138,18 +143,26 @@ const isError =
     };
 
     window.onNewsletterTurnstileSuccess = (token) => {
+      console.log('[newsletter-form] callback fired', {
+        callback: 'onNewsletterTurnstileSuccess',
+        tokenLength: typeof token === 'string' ? token.length : 0,
+      });
       document.querySelectorAll('[data-newsletter-form]').forEach((form) => {
         window.__jeremySyncNewsletterTurnstileToken(form, token);
         window.__jeremySetNewsletterSubmitEnabled(form, true);
 
         if (form instanceof HTMLFormElement && form.dataset.pendingSubmit === 'true') {
           form.dataset.pendingSubmit = 'false';
+          console.log('[newsletter-form] submit resumed');
           HTMLFormElement.prototype.submit.call(form);
         }
       });
     };
 
     window.onNewsletterTurnstileExpired = () => {
+      console.log('[newsletter-form] callback fired', {
+        callback: 'onNewsletterTurnstileExpired',
+      });
       document.querySelectorAll('[data-newsletter-form]').forEach((form) => {
         window.__jeremySyncNewsletterTurnstileToken(form, '');
         window.__jeremySetNewsletterSubmitEnabled(form, false);
@@ -180,6 +193,9 @@ const isError =
       if (turnstileWidget instanceof HTMLElement && !turnstileToken) {
         event.preventDefault();
         form.dataset.pendingSubmit = 'true';
+        console.log('[newsletter-form] submit intercepted', {
+          reason: 'missing-turnstile-token',
+        });
 
         if (window.turnstile && typeof window.turnstile.execute === 'function') {
           window.turnstile.execute(turnstileWidget);
@@ -196,5 +212,14 @@ const isError =
         );
       }
     });
+
+    if (!document.querySelector('script[data-jeremy-turnstile-script]') && document.querySelector('.cf-turnstile')) {
+      const script = document.createElement('script');
+      script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js';
+      script.async = true;
+      script.defer = true;
+      script.dataset.jeremyTurnstileScript = 'true';
+      document.head.appendChild(script);
+    }
   })();
 </script>
