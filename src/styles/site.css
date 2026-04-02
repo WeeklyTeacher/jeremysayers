@@ -505,6 +505,21 @@ h3 {
   min-height: 7rem;
 }
 
+.newsletter-form__turnstile {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.newsletter-form__turnstile-message {
+  min-height: 1.2rem;
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+.newsletter-form__turnstile-message--error {
+  color: var(--red);
+}
+
 .newsletter-form button {
   min-height: 3.2rem;
   background: linear-gradient(135deg, var(--navy), var(--navy-deep));

@@ -33,6 +33,10 @@ type SignupStatus =
   | 'missing-email'
   | 'invalid-email'
   | 'missing-first-name'
+  | 'missing-turnstile-site-key'
+  | 'missing-turnstile-secret'
+  | 'turnstile-missing-token'
+  | 'turnstile-failed'
   | 'bad-method'
   | 'bad-request'
   | 'db-error'
@@ -83,6 +87,7 @@ export const POST: APIRoute = async ({ request, redirect }) => {
     const interests = normalizeOptional(formData.get('interests'), 2000);
     const sourceContext = normalizeOptional(formData.get('sourceContext'), 120);
     const sourcePageFromForm = resolveRedirectPath(normalizeOptional(formData.get('sourcePage'), 200), '/');
+    const turnstileToken = normalizeOptional(formData.get('cf-turnstile-response'), 4096);
 
     sourcePage = sourcePageFromForm;
 
@@ -93,6 +98,7 @@ export const POST: APIRoute = async ({ request, redirect }) => {
       hasInterests: Boolean(interests),
       sourceContext,
       sourcePage,
+      hasTurnstileToken: Boolean(turnstileToken),
     });
 
     if (!firstName) {
@@ -112,9 +118,65 @@ export const POST: APIRoute = async ({ request, redirect }) => {
       return redirectWithStatus('invalid-email');
     }
 
+    const turnstileSiteKey = env.PUBLIC_TURNSTILE_SITE_KEY;
+    const turnstileSecret = env.TURNSTILE_SECRET_KEY;
+
     logStep('env_check', {
+      hasTurnstileSiteKey: Boolean(turnstileSiteKey),
+      hasTurnstileSecret: Boolean(turnstileSecret),
       hasDbBinding: Boolean(env.DB_JEREMYSAYERS),
     });
+
+    if (!turnstileSiteKey) {
+      logStep('missing_turnstile_site_key');
+      return redirectWithStatus('missing-turnstile-site-key');
+    }
+
+    if (!turnstileSecret) {
+      logStep('missing_turnstile_secret');
+      return redirectWithStatus('missing-turnstile-secret');
+    }
+
+    if (!turnstileToken) {
+      logStep('missing_turnstile_token');
+      return redirectWithStatus('turnstile-missing-token');
+    }
+
+    try {
+      const verificationBody = new URLSearchParams({
+        secret: turnstileSecret,
+        response: turnstileToken,
+      });
+
+      const remoteIp = request.headers.get('CF-Connecting-IP');
+      if (remoteIp) {
+        verificationBody.set('remoteip', remoteIp);
+      }
+
+      const verificationResponse = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: verificationBody.toString(),
+      });
+
+      const verificationResult = await verificationResponse.json() as {
+        success?: boolean;
+        'error-codes'?: string[];
+      };
+
+      logStep('turnstile_verification_complete', {
+        httpOk: verificationResponse.ok,
+        success: Boolean(verificationResult.success),
+        errorCodes: verificationResult['error-codes'] ?? [],
+      });
+
+      if (!verificationResponse.ok || !verificationResult.success) {
+        return redirectWithStatus('turnstile-failed');
+      }
+    } catch (error) {
+      console.error('[newsletter] turnstile verification failed', error);
+      return redirectWithStatus('turnstile-failed');
+    }
 
     const newsletterDb = env.DB_JEREMYSAYERS;
 
