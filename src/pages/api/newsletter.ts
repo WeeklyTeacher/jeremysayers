@@ -5,7 +5,7 @@ import { env } from 'cloudflare:workers';
 export const prerender = false;
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const DEBUG = true;
+const DEBUG = import.meta.env.DEV;
 
 const normalizeOptional = (value: FormDataEntryValue | null, maxLength: number) => {
   if (typeof value !== 'string') return null;
@@ -115,19 +115,12 @@ export const POST: APIRoute = async ({ request, redirect }) => {
       return redirectWithStatus('invalid-email');
     }
 
-    const turnstileSiteKey = env.PUBLIC_TURNSTILE_SITE_KEY;
     const turnstileSecret = env.TURNSTILE_SECRET_KEY;
 
     logStep('env_check', {
-      hasTurnstileSiteKey: Boolean(turnstileSiteKey),
       hasTurnstileSecret: Boolean(turnstileSecret),
       hasDbBinding: Boolean(env.DB_JEREMYSAYERS),
     });
-
-    if (!turnstileSiteKey) {
-      logStep('missing_turnstile_site_key');
-      return redirectWithStatus('missing-turnstile-site-key');
-    }
 
     if (hasTurnstileField) {
       if (!turnstileToken) {
