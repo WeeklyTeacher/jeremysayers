@@ -117,29 +117,15 @@ const isError =
 
 {turnstileSiteKey && <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>}
 <script is:inline>
-  if (!window.__newsletterTurnstileHandlersBound) {
-    window.__newsletterTurnstileHandlersBound = true;
-
+  (() => {
     const syncNewsletterTurnstileToken = (form, token = '') => {
       const tokenInput = form?.querySelector('[data-turnstile-response]');
-      console.log('[newsletter-form] hidden input found', {
-        found: tokenInput instanceof HTMLInputElement,
-      });
-
       if (tokenInput instanceof HTMLInputElement) {
         tokenInput.value = token;
-        console.log('[newsletter-form] token length written', {
-          length: token.length,
-        });
       }
     };
 
     window.onNewsletterTurnstileSuccess = (token) => {
-      console.log('[newsletter-form] callback fired', {
-        callback: 'onNewsletterTurnstileSuccess',
-        tokenLength: typeof token === 'string' ? token.length : 0,
-      });
-
       document.querySelectorAll('[data-newsletter-form]').forEach((form) => {
         syncNewsletterTurnstileToken(form, token);
       });
@@ -156,16 +142,10 @@ const isError =
       form.dataset.turnstileBound = 'true';
 
       form.addEventListener('submit', () => {
-        console.log('[newsletter-form] submit attempted');
-
         const injectedTurnstileInput = form.querySelector(
           'input[name="cf-turnstile-response"]:not([data-turnstile-response])'
         );
         const hiddenTurnstileInput = form.querySelector('[data-turnstile-response]');
-
-        console.log('[newsletter-form] hidden input found', {
-          found: hiddenTurnstileInput instanceof HTMLInputElement,
-        });
 
         if (
           injectedTurnstileInput instanceof HTMLInputElement &&
@@ -173,16 +153,10 @@ const isError =
           !hiddenTurnstileInput.value
         ) {
           hiddenTurnstileInput.value = injectedTurnstileInput.value;
-          console.log('[newsletter-form] token length written', {
-            length: hiddenTurnstileInput.value.length,
-          });
         }
 
         if (form.dataset.debugSubmit === 'true') {
           const formData = new FormData(form);
-          console.log('[newsletter-form] submit resumed', {
-            tokenLength: String(formData.get('cf-turnstile-response') ?? '').length,
-          });
           console.log(
             '[newsletter-form] submit payload',
             Object.fromEntries(formData.entries())
@@ -190,5 +164,5 @@ const isError =
         }
       });
     });
-  }
+  })();
 </script>
