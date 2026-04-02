@@ -1,6 +1,5 @@
 ---
 // /home/r_/projects/jeremysayers/src/components/NewsletterSignup.astro
-import { randomUUID } from 'node:crypto';
 
 interface Props {
   title?: string;
@@ -18,13 +17,11 @@ const {
   eyebrow = 'Stay Connected'
 } = Astro.props;
 
+// PUBLIC_TURNSTILE_SITE_KEY must be available when Astro builds so the widget markup renders.
 const turnstileSiteKey = import.meta.env.PUBLIC_TURNSTILE_SITE_KEY;
 const enableClientDebug = import.meta.env.DEV;
 const status = Astro.url.searchParams.get('newsletter');
 const formAction = new URL('/api/newsletter', Astro.url).pathname;
-const formInstanceId = `newsletter-${randomUUID()}`;
-const turnstileSuccessCallback = `onNewsletterTurnstileSuccess_${formInstanceId}`;
-const turnstileExpiredCallback = `onNewsletterTurnstileExpired_${formInstanceId}`;
 
 const newsletterMessages = {
   success: 'Thanks. You are on the list for future updates from Jeremy.',
@@ -64,7 +61,6 @@ const isError =
     action={formAction}
     method="POST"
     data-newsletter-form
-    data-newsletter-form-id={formInstanceId}
     data-debug-submit={enableClientDebug ? 'true' : 'false'}
   >
     <div class="newsletter-form__row">
@@ -92,17 +88,16 @@ const isError =
     {
       turnstileSiteKey && (
         <div class="newsletter-form__turnstile">
-          <!-- Local development on localhost should use Cloudflare Turnstile testing keys. -->
           <input type="hidden" name="cf-turnstile-response" value="" data-turnstile-response />
           <div
             class="cf-turnstile"
             data-sitekey={turnstileSiteKey}
             data-theme="light"
-            data-appearance="always"
+            data-appearance="interaction-only"
             data-size="flexible"
-            data-callback={turnstileSuccessCallback}
-            data-expired-callback={turnstileExpiredCallback}
-            data-error-callback={turnstileExpiredCallback}
+            data-callback="onNewsletterTurnstileSuccess"
+            data-expired-callback="onNewsletterTurnstileExpired"
+            data-error-callback="onNewsletterTurnstileExpired"
           ></div>
         </div>
       )
@@ -123,31 +118,27 @@ const isError =
 </section>
 
 {turnstileSiteKey && <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>}
-<script is:inline define:vars={{ formInstanceId, turnstileSuccessCallback, turnstileExpiredCallback }}>
-  (() => {
-    const form = document.querySelector(`[data-newsletter-form-id="${formInstanceId}"]`);
-    if (!(form instanceof HTMLFormElement)) return;
+<script is:inline>
+  const syncNewsletterTurnstileToken = (form, token = '') => {
+    const tokenInput = form?.querySelector('[data-turnstile-response]');
+    if (tokenInput instanceof HTMLInputElement) {
+      tokenInput.value = token;
+    }
+  };
 
-    const syncNewsletterTurnstileToken = (form, token = '') => {
-      const tokenInput = form?.querySelector('[data-turnstile-response]');
-      if (tokenInput instanceof HTMLInputElement) {
-        tokenInput.value = token;
-      }
-    };
-
-    window[turnstileSuccessCallback] = (token) => {
-      console.log('[newsletter-form] turnstile success', {
-        formInstanceId,
-        tokenLength: typeof token === 'string' ? token.length : 0,
-      });
+  window.onNewsletterTurnstileSuccess = (token) => {
+    document.querySelectorAll('[data-newsletter-form]').forEach((form) => {
       syncNewsletterTurnstileToken(form, token);
-    };
+    });
+  };
 
-    window[turnstileExpiredCallback] = () => {
-      console.log('[newsletter-form] turnstile expired', { formInstanceId });
+  window.onNewsletterTurnstileExpired = () => {
+    document.querySelectorAll('[data-newsletter-form]').forEach((form) => {
       syncNewsletterTurnstileToken(form, '');
-    };
+    });
+  };
 
+  document.querySelectorAll('[data-newsletter-form]').forEach((form) => {
     if (form.dataset.turnstileBound === 'true') return;
     form.dataset.turnstileBound = 'true';
 
@@ -156,14 +147,6 @@ const isError =
         'input[name="cf-turnstile-response"]:not([data-turnstile-response])'
       );
       const hiddenTurnstileInput = form.querySelector('[data-turnstile-response]');
-
-      console.log('[newsletter-form] submit token state', {
-        formInstanceId,
-        hiddenTokenLength:
-          hiddenTurnstileInput instanceof HTMLInputElement ? hiddenTurnstileInput.value.length : 0,
-        injectedTokenLength:
-          injectedTurnstileInput instanceof HTMLInputElement ? injectedTurnstileInput.value.length : 0,
-      });
 
       if (
         injectedTurnstileInput instanceof HTMLInputElement &&
@@ -181,5 +164,5 @@ const isError =
         );
       }
     });
-  })();
+  });
 </script>

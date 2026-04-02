@@ -1,0 +1,126 @@
+[1mdiff --git a/src/components/NewsletterSignup.astro b/src/components/NewsletterSignup.astro[m
+[1mindex f1d8977..ddefbb1 100644[m
+[1m--- a/src/components/NewsletterSignup.astro[m
+[1m+++ b/src/components/NewsletterSignup.astro[m
+[36m@@ -1,6 +1,5 @@[m
+ ---[m
+ // /home/r_/projects/jeremysayers/src/components/NewsletterSignup.astro[m
+[31m-import { randomUUID } from 'node:crypto';[m
+ [m
+ interface Props {[m
+   title?: string;[m
+[36m@@ -18,13 +17,11 @@[m [mconst {[m
+   eyebrow = 'Stay Connected'[m
+ } = Astro.props;[m
+ [m
+[32m+[m[32m// PUBLIC_TURNSTILE_SITE_KEY must be available when Astro builds so the widget markup renders.[m
+ const turnstileSiteKey = import.meta.env.PUBLIC_TURNSTILE_SITE_KEY;[m
+ const enableClientDebug = import.meta.env.DEV;[m
+ const status = Astro.url.searchParams.get('newsletter');[m
+ const formAction = new URL('/api/newsletter', Astro.url).pathname;[m
+[31m-const formInstanceId = `newsletter-${randomUUID()}`;[m
+[31m-const turnstileSuccessCallback = `onNewsletterTurnstileSuccess_${formInstanceId}`;[m
+[31m-const turnstileExpiredCallback = `onNewsletterTurnstileExpired_${formInstanceId}`;[m
+ [m
+ const newsletterMessages = {[m
+   success: 'Thanks. You are on the list for future updates from Jeremy.',[m
+[36m@@ -64,7 +61,6 @@[m [mconst isError =[m
+     action={formAction}[m
+     method="POST"[m
+     data-newsletter-form[m
+[31m-    data-newsletter-form-id={formInstanceId}[m
+     data-debug-submit={enableClientDebug ? 'true' : 'false'}[m
+   >[m
+     <div class="newsletter-form__row">[m
+[36m@@ -92,17 +88,16 @@[m [mconst isError =[m
+     {[m
+       turnstileSiteKey && ([m
+         <div class="newsletter-form__turnstile">[m
+[31m-          <!-- Local development on localhost should use Cloudflare Turnstile testing keys. -->[m
+           <input type="hidden" name="cf-turnstile-response" value="" data-turnstile-response />[m
+           <div[m
+             class="cf-turnstile"[m
+             data-sitekey={turnstileSiteKey}[m
+             data-theme="light"[m
+[31m-            data-appearance="always"[m
+[32m+[m[32m            data-appearance="interaction-only"[m
+             data-size="flexible"[m
+[31m-            data-callback={turnstileSuccessCallback}[m
+[31m-            data-expired-callback={turnstileExpiredCallback}[m
+[31m-            data-error-callback={turnstileExpiredCallback}[m
+[32m+[m[32m            data-callback="onNewsletterTurnstileSuccess"[m
+[32m+[m[32m            data-expired-callback="onNewsletterTurnstileExpired"[m
+[32m+[m[32m            data-error-callback="onNewsletterTurnstileExpired"[m
+           ></div>[m
+         </div>[m
+       )[m
+[36m@@ -123,31 +118,27 @@[m [mconst isError =[m
+ </section>[m
+ [m
+ {turnstileSiteKey && <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>}[m
+[31m-<script is:inline define:vars={{ formInstanceId, turnstileSuccessCallback, turnstileExpiredCallback }}>[m
+[31m-  (() => {[m
+[31m-    const form = document.querySelector(`[data-newsletter-form-id="${formInstanceId}"]`);[m
+[31m-    if (!(form instanceof HTMLFormElement)) return;[m
+[31m-[m
+[31m-    const syncNewsletterTurnstileToken = (form, token = '') => {[m
+[31m-      const tokenInput = form?.querySelector('[data-turnstile-response]');[m
+[31m-      if (tokenInput instanceof HTMLInputElement) {[m
+[31m-        tokenInput.value = token;[m
+[31m-      }[m
+[31m-    };[m
+[32m+[m[32m<script is:inline>[m
+[32m+[m[32m  const syncNewsletterTurnstileToken = (form, token = '') => {[m
+[32m+[m[32m    const tokenInput = form?.querySelector('[data-turnstile-response]');[m
+[32m+[m[32m    if (tokenInput instanceof HTMLInputElement) {[m
+[32m+[m[32m      tokenInput.value = token;[m
+[32m+[m[32m    }[m
+[32m+[m[32m  };[m
+ [m
+[31m-    window[turnstileSuccessCallback] = (token) => {[m
+[31m-      console.log('[newsletter-form] turnstile success', {[m
+[31m-        formInstanceId,[m
+[31m-        tokenLength: typeof token === 'string' ? token.length : 0,[m
+[31m-      });[m
+[32m+[m[32m  window.onNewsletterTurnstileSuccess = (token) => {[m
+[32m+[m[32m    document.querySelectorAll('[data-newsletter-form]').forEach((form) => {[m
+       syncNewsletterTurnstileToken(form, token);[m
+[31m-    };[m
+[32m+[m[32m    });[m
+[32m+[m[32m  };[m
+ [m
+[31m-    window[turnstileExpiredCallback] = () => {[m
+[31m-      console.log('[newsletter-form] turnstile expired', { formInstanceId });[m
+[32m+[m[32m  window.onNewsletterTurnstileExpired = () => {[m
+[32m+[m[32m    document.querySelectorAll('[data-newsletter-form]').forEach((form) => {[m
+       syncNewsletterTurnstileToken(form, '');[m
+[31m-    };[m
+[32m+[m[32m    });[m
+[32m+[m[32m  };[m
+ [m
+[32m+[m[32m  document.querySelectorAll('[data-newsletter-form]').forEach((form) => {[m
+     if (form.dataset.turnstileBound === 'true') return;[m
+     form.dataset.turnstileBound = 'true';[m
+ [m
+[36m@@ -157,14 +148,6 @@[m [mconst isError =[m
+       );[m
+       const hiddenTurnstileInput = form.querySelector('[data-turnstile-response]');[m
+ [m
+[31m-      console.log('[newsletter-form] submit token state', {[m
+[31m-        formInstanceId,[m
+[31m-        hiddenTokenLength:[m
+[31m-          hiddenTurnstileInput instanceof HTMLInputElement ? hiddenTurnstileInput.value.length : 0,[m
+[31m-        injectedTokenLength:[m
+[31m-          injectedTurnstileInput instanceof HTMLInputElement ? injectedTurnstileInput.value.length : 0,[m
+[31m-      });[m
+[31m-[m
+       if ([m
+         injectedTurnstileInput instanceof HTMLInputElement &&[m
+         hiddenTurnstileInput instanceof HTMLInputElement &&[m
+[36m@@ -181,5 +164,5 @@[m [mconst isError =[m
+         );[m
+       }[m
+     });[m
+[31m-  })();[m
+[32m+[m[32m  });[m
+ </script>[m
