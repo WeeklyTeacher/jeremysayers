@@ -139,15 +139,11 @@ const extraSchemas = Array.isArray(structuredData)
         <section class="sitewide-signup">
           <div class="shell">
             <NewsletterSignup
-              compact={true}
+              variant="bottom"
               eyebrow="Stay Connected"
               title="Stay Connected"
               text="Get occasional updates on education, community ideas, practical projects, and future work."
               sourceContext="sitewide-footer-signup"
-              linkHref={Astro.url.pathname === "/stay-connected/" ? "/contact/" : "/stay-connected/"}
-              linkText={Astro.url.pathname === "/stay-connected/"
-                ? "Prefer a direct note instead? Visit the contact page."
-                : "Want to share more? Visit the full updates form."}
             />
           </div>
         </section>

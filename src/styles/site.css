@@ -570,33 +570,20 @@ h3 {
   position: relative;
 }
 
-.signup-card--compact {
+.signup-card--bottom {
   display: grid;
   gap: 1rem;
-  align-items: center;
+  grid-template-columns: minmax(0, 0.9fr) minmax(360px, 1.1fr);
+  align-items: start;
   padding: 1.35rem 1.45rem;
 }
 
-.signup-card--compact .signup-card__copy {
+.signup-card--bottom .signup-card__copy {
   max-width: 36rem;
 }
 
-.newsletter-form--compact {
-  gap: 0.7rem;
-}
-
-.newsletter-form__row--compact {
-  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.15fr) auto;
-  align-items: center;
-}
-
-.newsletter-form--compact .newsletter-form__turnstile {
-  max-width: 22rem;
-}
-
-.newsletter-form--compact button {
-  min-width: 9rem;
-  padding-inline: 1.2rem;
+.newsletter-form--bottom {
+  gap: 0.85rem;
 }
 
 .about-intro {
@@ -856,17 +843,9 @@ h3 {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
-  .signup-card--compact,
+  .signup-card--bottom,
   .about-story-grid {
     grid-template-columns: 1fr;
-  }
-
-  .newsletter-form__row--compact {
-    grid-template-columns: 1fr;
-  }
-
-  .newsletter-form--compact .newsletter-form__turnstile {
-    max-width: none;
   }
 }
 
