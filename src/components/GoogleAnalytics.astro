@@ -117,7 +117,9 @@ const consentStorageKey = "jeremysayers_privacy_preferences_v2";
         const deleteAnalyticsCookies = () => {
           const hostParts = window.location.hostname.split(".");
           const domains = [window.location.hostname];
-          if (hostParts.length > 1) domains.push(`.${hostParts.slice(-2).join(".")}`);
+          for (let index = 1; index < hostParts.length - 1; index += 1) {
+            domains.push(`.${hostParts.slice(index).join(".")}`);
+          }
           const cookieNames = document.cookie
             .split(";")
             .map((cookie) => cookie.split("=")[0]?.trim())
