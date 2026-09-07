@@ -7,7 +7,7 @@ export default defineConfig({
   adapter: cloudflare({
     inspectorPort: false,
     platformProxy: {
-      enabled: true
+      enabled: process.env.CLOUDFLARE === '1'
     }
   }),
   output: 'server'
