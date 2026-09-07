@@ -1,23 +1,278 @@
 ---
-// Set PUBLIC_GA_MEASUREMENT_ID in your environment to enable Google Analytics site-wide.
+import { site } from "../data/site";
+
 const measurementId = import.meta.env.PUBLIC_GA_MEASUREMENT_ID?.trim();
+const consentStorageKey = "jeremysayers_privacy_preferences_v2";
 ---
 
 {
   measurementId && (
-    <>
-      <script
-        async
-        src={`https://www.googletagmanager.com/gtag/js?id=${measurementId}`}
-      ></script>
-      <script is:inline define:vars={{ measurementId }}>
-        window.dataLayer = window.dataLayer || [];
-        function gtag() {
-          window.dataLayer.push(arguments);
-        }
-        gtag("js", new Date());
-        gtag("config", measurementId);
-      </script>
-    </>
+    <div class="privacy-consent" data-privacy-root>
+      <section
+        class="privacy-consent__banner"
+        data-privacy-banner
+        role="dialog"
+        aria-labelledby="privacy-consent-title"
+        hidden
+      >
+        <div>
+          <p class="privacy-consent__eyebrow">Privacy choices</p>
+          <h2 id="privacy-consent-title">Your privacy, your choice</h2>
+          <p>
+            {site.domain} uses necessary storage to remember your privacy choice. With your permission,
+            we also use Google Analytics to understand aggregate site usage and improve the site.
+          </p>
+          <p class="privacy-consent__links">
+            <a href="/privacy-policy/">Privacy Policy</a>
+            <a href="/cookies/">Cookies Policy</a>
+          </p>
+        </div>
+        <div class="privacy-consent__actions" aria-label="Privacy consent actions">
+          <button type="button" data-privacy-reject>Reject all</button>
+          <button type="button" data-privacy-open>Preferences</button>
+          <button type="button" data-privacy-accept>Accept all</button>
+        </div>
+      </section>
+
+      <dialog class="privacy-consent__dialog" data-privacy-dialog aria-labelledby="privacy-preferences-title">
+        <form method="dialog" class="privacy-consent__preferences" data-privacy-form>
+          <div class="privacy-consent__dialog-header">
+            <div>
+              <p class="privacy-consent__eyebrow">Privacy preferences</p>
+              <h2 id="privacy-preferences-title">Cookie and privacy choices</h2>
+            </div>
+            <button type="button" class="privacy-consent__close" data-privacy-close aria-label="Close privacy preferences">×</button>
+          </div>
+
+          <label class="privacy-consent__option privacy-consent__option--locked">
+            <span>
+              <strong>Strictly necessary</strong>
+              <small>Required to operate the site and remember your privacy choice.</small>
+            </span>
+            <input type="checkbox" checked disabled />
+          </label>
+
+          <label class="privacy-consent__option">
+            <span>
+              <strong>Analytics</strong>
+              <small>Allows Google Analytics to measure aggregate traffic and page performance.</small>
+            </span>
+            <input type="checkbox" data-privacy-analytics />
+          </label>
+
+          <div class="privacy-consent__option privacy-consent__option--locked">
+            <span>
+              <strong>Advertising personalization</strong>
+              <small>This site does not use personalized advertising.</small>
+            </span>
+            <span class="privacy-consent__status">Not used</span>
+          </div>
+
+          <p class="privacy-consent__note">
+            Optional choices begin turned off. You can reopen this panel from the footer at any time.
+          </p>
+          <div class="privacy-consent__modal-actions">
+            <button type="button" data-privacy-reject>Reject all</button>
+            <button type="submit">Save choices</button>
+            <button type="button" data-privacy-accept>Accept all</button>
+          </div>
+        </form>
+      </dialog>
+    </div>
   )
 }
+
+{
+  measurementId && (
+    <script is:inline define:vars={{ measurementId, consentStorageKey }}>
+      (() => {
+        const CONSENT_VERSION = 2;
+        const CONSENT_LIFETIME_MS = 180 * 24 * 60 * 60 * 1000;
+        const banner = document.querySelector("[data-privacy-banner]");
+        const dialog = document.querySelector("[data-privacy-dialog]");
+        const form = document.querySelector("[data-privacy-form]");
+        const analyticsInput = document.querySelector("[data-privacy-analytics]");
+        let googleAnalyticsLoaded = false;
+
+        const readPreferences = () => {
+          try {
+            const raw = localStorage.getItem(consentStorageKey);
+            if (!raw) return null;
+            const saved = JSON.parse(raw);
+            if (
+              saved?.version !== CONSENT_VERSION ||
+              typeof saved?.analytics !== "boolean" ||
+              Date.parse(saved?.expiresAt || "") <= Date.now()
+            ) {
+              localStorage.removeItem(consentStorageKey);
+              return null;
+            }
+            return saved;
+          } catch {
+            localStorage.removeItem(consentStorageKey);
+            return null;
+          }
+        };
+
+        const deleteAnalyticsCookies = () => {
+          const hostParts = window.location.hostname.split(".");
+          const domains = [window.location.hostname];
+          for (let index = 1; index < hostParts.length - 1; index += 1) {
+            domains.push(`.${hostParts.slice(index).join(".")}`);
+          }
+          const cookieNames = document.cookie
+            .split(";")
+            .map((cookie) => cookie.split("=")[0]?.trim())
+            .filter((name) => name === "_ga" || name?.startsWith("_ga_"));
+
+          for (const name of cookieNames) {
+            document.cookie = `${name}=; Max-Age=0; path=/; SameSite=Lax`;
+            for (const domain of domains) {
+              document.cookie = `${name}=; Max-Age=0; path=/; domain=${domain}; SameSite=Lax`;
+            }
+          }
+        };
+
+        const loadGoogleAnalytics = () => {
+          if (googleAnalyticsLoaded) return;
+          googleAnalyticsLoaded = true;
+          window.dataLayer = window.dataLayer || [];
+          window.gtag = window.gtag || function gtag(){ window.dataLayer.push(arguments); };
+          window.gtag("consent", "default", {
+            analytics_storage: "denied",
+            ad_storage: "denied",
+            ad_user_data: "denied",
+            ad_personalization: "denied",
+            functionality_storage: "granted",
+            security_storage: "granted",
+          });
+          window.gtag("consent", "update", {
+            analytics_storage: "granted",
+            ad_storage: "denied",
+            ad_user_data: "denied",
+            ad_personalization: "denied",
+          });
+          window.gtag("js", new Date());
+          window.gtag("config", measurementId, {
+            anonymize_ip: true,
+            allow_google_signals: false,
+            allow_ad_personalization_signals: false,
+            page_location: `${window.location.origin}${window.location.pathname}`,
+          });
+
+          const script = document.createElement("script");
+          script.async = true;
+          script.src = `https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(measurementId)}`;
+          document.head.appendChild(script);
+        };
+
+        const writePreferences = (analytics) => {
+          const previous = readPreferences();
+          const saved = {
+            version: CONSENT_VERSION,
+            analytics: Boolean(analytics),
+            updatedAt: new Date().toISOString(),
+            expiresAt: new Date(Date.now() + CONSENT_LIFETIME_MS).toISOString(),
+          };
+          localStorage.setItem(consentStorageKey, JSON.stringify(saved));
+          if (saved.analytics) loadGoogleAnalytics();
+          else deleteAnalyticsCookies();
+          if (banner instanceof HTMLElement) banner.hidden = true;
+          if (dialog instanceof HTMLDialogElement && dialog.open) dialog.close();
+          if (previous?.analytics && !saved.analytics) window.location.reload();
+        };
+
+        const openPreferences = () => {
+          const saved = readPreferences();
+          if (analyticsInput instanceof HTMLInputElement) analyticsInput.checked = saved?.analytics === true;
+          if (dialog instanceof HTMLDialogElement && !dialog.open) dialog.showModal();
+        };
+
+        const saved = readPreferences();
+        if (saved?.analytics) loadGoogleAnalytics();
+        else if (!saved && banner instanceof HTMLElement) banner.hidden = false;
+
+        document.addEventListener("click", (event) => {
+          const target = event.target instanceof Element ? event.target : null;
+          if (!target) return;
+          if (target.closest("[data-privacy-accept]")) {
+            event.preventDefault();
+            writePreferences(true);
+          } else if (target.closest("[data-privacy-reject]")) {
+            event.preventDefault();
+            writePreferences(false);
+          } else if (target.closest("[data-privacy-open], [data-privacy-preferences]")) {
+            event.preventDefault();
+            openPreferences();
+          } else if (target.closest("[data-privacy-close]")) {
+            event.preventDefault();
+            if (dialog instanceof HTMLDialogElement && dialog.open) dialog.close();
+          }
+        });
+
+        form?.addEventListener("submit", (event) => {
+          event.preventDefault();
+          writePreferences(analyticsInput instanceof HTMLInputElement && analyticsInput.checked);
+        });
+
+        dialog?.addEventListener("close", () => {
+          if (!readPreferences() && banner instanceof HTMLElement) banner.hidden = false;
+        });
+
+        window.PrivacyConsent = {
+          open: openPreferences,
+          getPreferences: readPreferences,
+        };
+      })();
+    </script>
+  )
+}
+
+<style is:global>
+  .privacy-consent__banner {
+    position: fixed;
+    z-index: 10000;
+    right: max(1rem, calc((100vw - 1180px) / 2));
+    bottom: 1rem;
+    left: max(1rem, calc((100vw - 1180px) / 2));
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 1.25rem;
+    align-items: center;
+    padding: 1.2rem;
+    color: #172238;
+    background: rgba(255, 255, 255, 0.98);
+    border: 1px solid rgba(23, 34, 56, 0.28);
+    border-radius: 18px;
+    box-shadow: 0 18px 50px rgba(23, 34, 56, 0.24);
+  }
+
+  .privacy-consent__banner[hidden] { display: none; }
+  .privacy-consent__eyebrow { margin: 0 0 0.35rem; font-size: 0.75rem; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; }
+  .privacy-consent h2 { margin: 0; font-size: 1.25rem; }
+  .privacy-consent p { line-height: 1.55; }
+  .privacy-consent__banner p { margin: 0.45rem 0 0; }
+  .privacy-consent__links { display: flex; flex-wrap: wrap; gap: 0.9rem; font-weight: 700; }
+  .privacy-consent__actions, .privacy-consent__modal-actions { display: flex; flex-wrap: wrap; gap: 0.65rem; }
+  .privacy-consent button { min-height: 44px; padding: 0.65rem 0.9rem; color: #172238; background: #fff; border: 2px solid #172238; border-radius: 10px; cursor: pointer; font: inherit; font-weight: 800; }
+  .privacy-consent button:hover, .privacy-consent button:focus-visible { color: #fff; background: #172238; }
+  .privacy-consent__dialog { width: min(680px, calc(100% - 2rem)); padding: 0; border: 0; border-radius: 18px; box-shadow: 0 24px 80px rgba(0, 0, 0, 0.35); }
+  .privacy-consent__dialog::backdrop { background: rgba(10, 18, 33, 0.62); }
+  .privacy-consent__preferences { padding: 1.25rem; color: #172238; background: #fff; }
+  .privacy-consent__dialog-header { display: flex; justify-content: space-between; gap: 1rem; align-items: start; }
+  .privacy-consent__close { min-width: 44px; padding: 0.25rem; font-size: 1.5rem; }
+  .privacy-consent__option { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 1rem; align-items: center; padding: 1rem 0; border-top: 1px solid rgba(23, 34, 56, 0.16); }
+  .privacy-consent__option small { display: block; margin-top: 0.25rem; line-height: 1.45; }
+  .privacy-consent__option input { width: 1.2rem; height: 1.2rem; }
+  .privacy-consent__option--locked { color: #566174; }
+  .privacy-consent__status { font-weight: 800; }
+  .privacy-consent__note { font-size: 0.9rem; }
+  .privacy-consent__modal-actions { justify-content: flex-end; padding-top: 1rem; border-top: 1px solid rgba(23, 34, 56, 0.16); }
+  .footer-privacy-button { appearance: none; padding: 0; color: inherit; background: transparent; border: 0; cursor: pointer; font: inherit; text-align: left; text-decoration: underline; }
+
+  @media (max-width: 760px) {
+    .privacy-consent__banner, .privacy-consent__option { grid-template-columns: 1fr; }
+    .privacy-consent__actions, .privacy-consent__modal-actions { display: grid; }
+    .privacy-consent__actions button, .privacy-consent__modal-actions button { width: 100%; }
+  }
+</style>

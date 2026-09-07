@@ -1,0 +1,49 @@
+---
+import PageIntro from "../components/PageIntro.astro";
+import SectionHeading from "../components/SectionHeading.astro";
+import SiteLayout from "../layouts/SiteLayout.astro";
+---
+
+<SiteLayout
+  title="Cookies Policy | Jeremy Sayers"
+  description="Cookies and privacy choices for JeremySayers.com."
+>
+  <PageIntro
+    title="Cookies Policy"
+    description="This page explains the browser storage used by JeremySayers.com and how to change optional analytics choices."
+  />
+
+  <section class="section-band section-band--paper">
+    <div class="shell stack">
+      <SectionHeading eyebrow="Last updated" title="September 7, 2026" />
+      <article class="panel policy-card">
+        <h2>Strictly necessary storage</h2>
+        <p>
+          The site stores a first-party privacy preference in your browser so it can remember whether you allowed
+          optional analytics. This storage is used only to operate the privacy choice system.
+        </p>
+
+        <h2>Optional analytics</h2>
+        <p>
+          If you choose Analytics, the site loads Google Analytics 4. Google Analytics may set cookies whose names
+          begin with <code>_ga</code> to measure aggregate traffic and page performance. The Google Analytics script is
+          not downloaded before you grant permission.
+        </p>
+
+        <h2>Advertising</h2>
+        <p>This site does not currently use personalized advertising cookies.</p>
+
+        <h2>Change your choices</h2>
+        <p>
+          You can reopen your choices at any time. Turning Analytics off stops future analytics collection and removes
+          known Google Analytics cookies for this site.
+        </p>
+        <p>
+          <button class="footer-privacy-button" type="button" data-privacy-preferences>
+            Cookie and Privacy Choices
+          </button>
+        </p>
+      </article>
+    </div>
+  </section>
+</SiteLayout>
