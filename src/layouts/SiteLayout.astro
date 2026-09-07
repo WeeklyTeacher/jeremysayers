@@ -105,7 +105,6 @@ const extraSchemas = Array.isArray(structuredData)
         <script type="application/ld+json" set:html={JSON.stringify(schema)} />
       ))
     }
-    <GoogleAnalytics />
   </head>
   <body>
     <div class="site-chroma" aria-hidden="true"></div>
@@ -172,6 +171,9 @@ const extraSchemas = Array.isArray(structuredData)
             <h3>More</h3>
             <div class="footer-link-list">
               {footerLinks.map((link) => <a href={link.href}>{link.label}</a>)}
+              <button class="footer-privacy-button" type="button" data-privacy-preferences>
+                Cookie and Privacy Choices
+              </button>
             </div>
           </div>
 
@@ -190,6 +192,7 @@ const extraSchemas = Array.isArray(structuredData)
         <small>© {currentYear} Jeremy Sayers. All rights reserved.</small>
       </div>
     </footer>
+    <GoogleAnalytics />
     <script>
       const prefersReducedMotion = window.matchMedia(
         "(prefers-reduced-motion: reduce)",
